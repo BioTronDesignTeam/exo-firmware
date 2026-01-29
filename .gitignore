@@ -1,0 +1,34 @@
+# STM32CubeIDE
+.metadata/
+.settings/
+*.ld
+
+# Build artifacts (compiled code, object files, executables, etc)
+[Dd]ebug/
+[Rr]elease/
+build/
+x64/
+*.o
+*.ko
+*.obj
+*.elf
+*.map
+*.hex
+*.bin
+*.a
+*.lib
+
+# IDE specific files and settings
+.settings/
+.project
+.cproject
+.launch*
+.metadata/
+.vs/
+.vscode/
+
+# Cube-generated backups and miscellaneous system files
+*~
+*.swp
+.DS_Store
+Thumbs.db
