@@ -1,7 +1,6 @@
 # STM32CubeIDE
 .metadata/
 .settings/
-*.ld
 
 # Build artifacts (compiled code, object files, executables, etc)
 [Dd]ebug/
@@ -20,8 +19,6 @@ x64/
 
 # IDE specific files and settings
 .settings/
-.project
-.cproject
 .launch*
 .metadata/
 .vs/
