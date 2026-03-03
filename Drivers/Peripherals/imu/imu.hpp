@@ -97,6 +97,37 @@ private:
 		Gyro_Integrated_Rotation_Vector_config = 0xA1A2
 
 	};
+	uint8_t BNO_I2C_ADD = 0x4B;
+	uint8_t DFU_I2C_ADD =0x29; // idk if we need this?
+
+	//SHTP channels
+	enum ShtpChannel : uint8_t
+	{
+		Command_Channel = 0,
+		Executable_Channel = 1,
+		SHC_Channel = 2,
+		Input_Sensor_Report = 3,
+		Wake_Input_Sensor_Report = 4,
+		Gyro_Rotation_Vector = 5
+
+	};
+
+	enum class Sh2CommandId : uint8_t
+	{
+	    Errors = 1,
+	    CommandCounter = 2,
+	    Tare = 3,
+	    Initialize = 4,
+		Reserved = 5,
+	    Dcd = 6,
+	    Me_Cal = 7,
+		DCD_Save = 9,
+		Oscillator = 10,
+		Clear_DCD_Reset = 11,
+		Calibration = 12,
+		Bootloader = 13,
+		Interactive_Calibration = 14
+	};
 
 
 };
