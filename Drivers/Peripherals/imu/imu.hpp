@@ -13,7 +13,8 @@ class IMU
 {
 private:
 	//Report ID for the sensors use in SH-2
-	enum class SensorReport : uint8_t {
+	enum class SensorReport : uint8_t
+	{
 	        Accelerometer = 0x01,
 	        Gyroscope = 0x02,
 			Magnetic_Field =0x03,
@@ -46,6 +47,24 @@ private:
 			ARVR_Stabilized_Rotation_vector= 0x28,
 			ARVR_Stabilized_Game_Rotaton_Vector = 0x29
 	    };
+	enum class Control_Mssg : uint8_t
+	{
+		Get_Feature_Request = 0xFE,
+		Set_Feature_Command = 0xFD,
+		Get_Feature_Response = 0xFC,
+		Base_Timestamp = 0xFB,
+		Timestamp_Rebase = 0xFA,
+		Product_ID_Request = 0xF9,
+		Product_ID_Response = 0xF8,
+		FRS_Write_Request = 0xF7,
+		FRS_Write_Date = 0xF6,
+		FRS_Write_Response = 0xF5,
+		FRS_Read_Reqest = 0xF4,
+		FRS_Read_Response = 0xF3,
+		Command_Request = 0xF2,
+		Command_Response = 0xF1
+
+	};
 
 
 };
