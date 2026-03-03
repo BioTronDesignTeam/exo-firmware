@@ -12,8 +12,8 @@
 class IMU
 {
 private:
-	//Report ID for the sensors use in SH-2
-	enum class SensorReport : uint8_t
+	//Identifiers for SH-2 sensor feature reports used to enable and receive sensor data.
+	enum class SensorReportID : uint8_t
 	{
 	        Accelerometer = 0x01,
 	        Gyroscope = 0x02,
@@ -47,7 +47,8 @@ private:
 			ARVR_Stabilized_Rotation_vector= 0x28,
 			ARVR_Stabilized_Game_Rotaton_Vector = 0x29
 	    };
-	enum class Control_Mssg : uint8_t
+	//Identifiers for SH-2 command messages used to configure or query the sensor.
+	enum class CommandReportID : uint8_t
 	{
 		Get_Feature_Request = 0xFE,
 		Set_Feature_Command = 0xFD,
@@ -63,6 +64,37 @@ private:
 		FRS_Read_Response = 0xF3,
 		Command_Request = 0xF2,
 		Command_Response = 0xF1
+	};
+	//Flash Record System identifiers used to access configuration data stored in non-volatile memory.
+	enum class FRSReportId : uint8_t
+	{
+		Static_Calibration_AGM = 0x7979,
+		Nominal_Calibration_AGM = 0x4D4D,
+		Static_Calibration_SRA = 0x8A8A,
+		Nominal_Calibration_SRA = 0x4E4E,
+		Dynamic_Calibration = 0x1F1F,
+		MotionEngine_Power_Managment = 0xD3E2,
+		System_Orientation = 0x2D3E,
+		Primary_Accelerometer_Orientation = 0x2D41,
+		Gyroscope_Orientation = 0x2D4C,
+		Magnetometer_Orientation = 0x2D4C,
+		ARVR_Stabilization_Rotation_Vector = 0x3E2D,
+		ARVR_Stabilization_Game_Rotation_Vector = 0x3E2E,
+		Significant_Motion_Detector_Config = 0xC274,
+		Shake_Detector_Config = 0x7D7D,
+		Maximum_Fusion_Period = 0xD7D6,
+		Serial_Number = 0x4B4B,
+		Environmental_Pressure_Calibration = 0x39AF,
+		Environmental_Temperature_Calibration = 0x4D20,
+		Environmental_Humidity_Calibation = 0x1AC9,
+		Environmental_Ambient_Light_Calibration = 0x39B1,
+		Environmental_Proximity_Calibraton = 0x4DA2,
+		ALS_Calibration = 0xD401,
+		Proximity_Sensor_Calibration = 0xD402,
+		Stability_Detector_Config = 0xED85,
+		User_Record = 0x74B4,
+		MotionEngine_Time_Source_Selection = 0xD403,
+		Gyro_Integrated_Rotation_Vector_config = 0xA1A2
 
 	};
 
