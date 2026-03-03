@@ -97,8 +97,7 @@ private:
 		Gyro_Integrated_Rotation_Vector_config = 0xA1A2
 
 	};
-	uint8_t BNO_I2C_ADD = 0x4B;
-	uint8_t DFU_I2C_ADD =0x29; // idk if we need this?
+
 
 	//SHTP channels
 	enum ShtpChannel : uint8_t
@@ -129,5 +128,48 @@ private:
 		Interactive_Calibration = 14
 	};
 
+	I2C_HandleTypeDef *_hi2c;
+	uint8_t BNO_I2C_ADD = 0x4B;
+	uint8_t DFU_I2C_ADD =0x29; // idk if we need this?
 
+	bool sendPacket(uint8_t channel, uint8_t *data, uint16_t length);
+	bool readPacket();
+    void resetSequenceNumbers();
+
+    uint8_t sequenceNumber[6];
+
+    uint8_t shtpHeader[4];
+    uint8_t shtpData[256];
+
+    uint16_t packetLength;
+    uint8_t packetChannel;
+
+	// Raw sensor storage
+    int16_t rawQuatI, rawQuatJ, rawQuatK, rawQuatReal;
+    int16_t rawAccelX, rawAccelY, rawAccelZ;
+
+	public:
+	IMU(I2C_HandleTypeDef *hi2c, uint8_t BNO_I2C_ADD);
+
+	// Runtime functions
+	bool dataAvailable();
+	bool parsePacket(); //idk maybe this should be in private part?
+
+	//set up functions
+	bool BNO_Init();
+	bool BNO_SoftReset();
+	bool enableRotationVector(uint32_t interval_us);
+	bool enableAccelerometer(uint32_t interval_us);
+
+	//Getters
+	float getQuatI();
+	float getQuatJ();
+	float getQuatK();
+	float getQuatReal();
+
+	float getAccelX();
+	float getAccelY();
+	float getAccelZ();
+
+	//setters
 };
