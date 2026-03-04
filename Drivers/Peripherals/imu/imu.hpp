@@ -66,7 +66,7 @@ private:
 		Command_Response = 0xF1
 	};
 	//Flash Record System identifiers used to access configuration data stored in non-volatile memory.
-	enum class FRSReportId : uint8_t
+	enum class FRSReportId : uint16_t
 	{
 		Static_Calibration_AGM = 0x7979,
 		Nominal_Calibration_AGM = 0x4D4D,
@@ -173,3 +173,4 @@ private:
 
 	//setters
 };
+
