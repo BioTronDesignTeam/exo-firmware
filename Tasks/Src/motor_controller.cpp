@@ -21,7 +21,7 @@ void motorControllerMainLoop(void *arg)
   while(true)
   {
     BSP_LED_Toggle(LED_GREEN);
-    odrive.getHeartbeat(&heartbeat);
+    //odrive.getHeartbeat(&heartbeat);
     osDelay(1000);
   }
 }

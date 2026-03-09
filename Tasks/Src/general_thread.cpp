@@ -2,4 +2,5 @@
 
 void initTasks() {
   motorControllerInitTask();
+  imuInitTask();
 }

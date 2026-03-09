@@ -5,19 +5,18 @@
 #include <cstring>
 
 
-IMU :: IMU (I2C_HandleTypeDef *hi2c, uint8_t BNO_I2C_ADD)
+IMU :: IMU (I2C_HandleTypeDef *hi2c)
 {
 	this-> _hi2c = hi2c;
-	this->BNO_I2C_ADD= BNO_I2C_ADD;
 	resetSequenceNumbers();
 
-};
+}
 
 void IMU :: resetSequenceNumbers(){
 	for(int i = 0; i<6 ; i++){
 		sequenceNumber[i]=0;
 	}
-};
+}
 
 bool IMU:: BNO_Init(){
 	if(HAL_I2C_IsDeviceReady(_hi2c, BNO_I2C_ADD, 100, 100) != HAL_OK)
@@ -27,7 +26,7 @@ bool IMU:: BNO_Init(){
 	HAL_Delay(100);
 
 	return true;
-};
+}
 
 bool IMU :: sendPacket(uint8_t channel, uint8_t *data, uint16_t length){
 	uint16_t totalLength = length +4;
@@ -43,7 +42,7 @@ bool IMU :: sendPacket(uint8_t channel, uint8_t *data, uint16_t length){
 	if(HAL_I2C_Master_Transmit(_hi2c, BNO_I2C_ADD, data, totalLength, 100) !=HAL_OK)
 		return false;
 	return true;
-};
+}
 
 bool IMU :: readPacket(){
 	if(HAL_I2C_Master_Receive(_hi2c, BNO_I2C_ADD, shtpHeader , 4 , 100)!= HAL_OK)
@@ -57,7 +56,7 @@ bool IMU :: readPacket(){
 	}
 	return true;
 
-};
+}
 
 bool IMU::BNO_SoftReset(){
 	uint8_t payload[1];
@@ -65,4 +64,71 @@ bool IMU::BNO_SoftReset(){
 	return sendPacket(static_cast<uint8_t>(ShtpChannel::Command_Channel), payload, 1);
 
 }
+
+bool IMU:: enableRotationVector(uint32_t interval){
+	uint8_t payload[17]= {0};
+	payload[0] = static_cast<uint8_t> (CommandReportID:: Set_Feature_Command);
+    payload[1] = static_cast<uint8_t> (SensorReportID::Rotation_Vector);   // Rotation Vector report ID
+    payload[5] = interval & 0xFF;
+    payload[6] = (interval >> 8) & 0xFF;
+    payload[7] = (interval >> 16) & 0xFF;
+    payload[8] = (interval >> 24) & 0xFF;
+	return sendPacket(static_cast<uint8_t>(ShtpChannel::SHC_Channel), payload, 17);
+}
+
+bool IMU::enableAccelerometer(uint32_t interval){
+	uint8_t payload[17] = {0};
+
+	payload[0]= static_cast<uint8_t> (CommandReportID::Set_Feature_Command);
+	payload[1] = static_cast<uint8_t> (SensorReportID::Accelerometer);
+	payload[6] = (interval >> 8) & 0xFF;
+    payload[7] = (interval >> 16) & 0xFF;
+    payload[8] = (interval >> 24) & 0xFF;
+
+}
+
+bool IMU::dataAvailable()
+{
+    return readPacket();
+}
+
+bool IMU::parsePacket()
+{
+    if(packetChannel != 3)
+        return false;
+
+    uint8_t reportID = shtpData[0];
+
+    if(reportID == static_cast<uint8_t>(SensorReportID::Rotation_Vector))
+    {
+        rawQuatI    = (int16_t)(shtpData[4]  | (shtpData[5] << 8));
+        rawQuatJ    = (int16_t)(shtpData[6]  | (shtpData[7] << 8));
+        rawQuatK    = (int16_t)(shtpData[8]  | (shtpData[9] << 8));
+        rawQuatReal = (int16_t)(shtpData[10] | (shtpData[11] << 8));
+        return true;
+    }
+
+    if(reportID == static_cast<uint8_t>(SensorReportID::Accelerometer))
+    {
+        rawAccelX = (int16_t)(shtpData[4] | (shtpData[5] << 8));
+        rawAccelY = (int16_t)(shtpData[6] | (shtpData[7] << 8));
+        rawAccelZ = (int16_t)(shtpData[8] | (shtpData[9] << 8));
+        return true;
+    }
+
+    return false;
+}
+
+float IMU::getQuatI()    { return rawQuatI / 16384.0f; }
+float IMU::getQuatJ()    { return rawQuatJ / 16384.0f; }
+float IMU::getQuatK()    { return rawQuatK / 16384.0f; }
+float IMU::getQuatReal() { return rawQuatReal / 16384.0f; }
+
+float IMU::getAccelX() { return rawAccelX / 256.0f; }
+float IMU::getAccelY() { return rawAccelY / 256.0f; }
+float IMU::getAccelZ() { return rawAccelZ / 256.0f; }
+
+
+
+
 

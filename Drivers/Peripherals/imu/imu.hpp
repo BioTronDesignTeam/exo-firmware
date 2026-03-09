@@ -129,7 +129,7 @@ private:
 	};
 
 	I2C_HandleTypeDef *_hi2c;
-	uint8_t BNO_I2C_ADD = 0x4B;
+	uint8_t BNO_I2C_ADD = 0x4A <<1;
 	uint8_t DFU_I2C_ADD =0x29; // idk if we need this?
 
 	bool sendPacket(uint8_t channel, uint8_t *data, uint16_t length);
@@ -149,7 +149,7 @@ private:
     int16_t rawAccelX, rawAccelY, rawAccelZ;
 
 	public:
-	IMU(I2C_HandleTypeDef *hi2c, uint8_t BNO_I2C_ADD);
+	IMU(I2C_HandleTypeDef *hi2c);
 
 	// Runtime functions
 	bool dataAvailable();
