@@ -130,7 +130,7 @@ private:
 
 	I2C_HandleTypeDef *_hi2c;
 	uint8_t BNO_I2C_ADD = 0x4A <<1;
-	uint8_t DFU_I2C_ADD =0x29; // idk if we need this?
+	uint8_t DFU_I2C_ADD =0x29;
 
 	bool sendPacket(uint8_t channel, uint8_t *data, uint16_t length);
 	bool readPacket();
