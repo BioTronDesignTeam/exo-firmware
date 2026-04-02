@@ -19,18 +19,22 @@ ODRIVES1 odrive_right(&hfdcan1);
  */
 void motorControllerMainLoop(void *arg)
 {
-  float left_torque = 0.0;
-  float right_torque = 0.0;
   uint32_t next_wake_time = osKernelGetTickCount();
+  float torques[2] = {0, 0};
 
   while(true)
   {
-    // TODO: receive resulting torques from RL policy
+    // read resulting torques from RL policy
+	HAL_StatusTypeDef res = HAL_UART_Receive(&huart2, (uint8_t*)torques, sizeof(torques), 5);
+	if (res != HAL_OK) {
+		printf("Torque reading was not successful.\n");
+		return;
+	}
 
     // run safety check:
 	// ensures torques are within the safety range
-	left_torque = clamp(MAX_TORQUE, MIN_TORQUE, left_torque);
-	right_torque = clamp(MAX_TORQUE, MIN_TORQUE, right_torque);
+	float left_torque = clamp(MAX_TORQUE, MIN_TORQUE, torques[0]);
+	float right_torque = clamp(MAX_TORQUE, MIN_TORQUE, torques[1]);
 
     // write the torques to the motors
 	odrive_left.setInputTorque(left_torque);

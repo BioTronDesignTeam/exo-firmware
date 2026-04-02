@@ -13,6 +13,15 @@ static const osThreadAttr_t motorStatesReading_attributes = {
     .priority = (osPriority_t) osPriorityNormal
 };
 
+struct MotorStates {
+	float position;
+	float velocity;
+	float torque;
+	float target_torque;
+	float FET_temperature;
+	float motor_temperature;
+};
+
 /*
  * Reads motor states and send it to UI and RL policy.
  */
@@ -22,16 +31,19 @@ void motorStatesReadingMainLoop(void *arg)
   ODRIVES1 odrive_left(&hfdcan1);
   ODRIVES1 odrive_right(&hfdcan2);
 
-  odrive_can_heartbeat_t heartbeat = {0};
+  ODRIVES1* odrives[2] = { &odrive_left, &odrive_right };
+  MotorStates motor_states[2];
+  odrive_can_encoder_estimates_t estimates[2];
+  odrive_can_temperature_t temps[2];
+  odrive_can_torque_t torques[2];
+  odrive_can_power_t powers[2];
 
-  odrive_can_encoder_estimates_t left_estimates = {0, 0};
-  odrive_can_temperature_t left_temperature = {0, 0};
-  odrive_can_torque_t left_torque = {0, 0};
-
-  odrive_can_encoder_estimates_t right_estimates = {0, 0};
-  odrive_can_temperature_t right_temperature = {0, 0};
-  odrive_can_torque_t right_torque = {0, 0};
-  odrive_can_power_t power = {0, 0};
+  // motor states that will be sent to UI
+  MotorStates left_states, right_states;
+  // buffer storing all motor states
+  uint8_t uart_buffer1[sizeof(MotorStates) * 2];
+  // buffer storing motion data for RL (left & right hip motor pos and vel)
+  uint8_t uart_buffer2[sizeof(float) * 4];
 
   uint32_t next_wake_time = osKernelGetTickCount();
 
@@ -39,20 +51,38 @@ void motorStatesReadingMainLoop(void *arg)
   {
     BSP_LED_Toggle(LED_GREEN);
 
-    // receive left motor states
-    odrive_left.getEncoderEstimates(&left_estimates);
-    odrive_left.getTemperatures(&left_temperature);
-    odrive_left.getTorques(&left_torque);
-    odrive_left.getPowers(&power);
+    // read left and right motor states
+    for(int i = 0; i < 2; i++) {
+        odrives[i]->getEncoderEstimates(&estimates[i]);
+        odrives[i]->getTemperatures(&temps[i]);
+        odrives[i]->getTorques(&torques[i]);
+        odrives[i]->getPowers(&powers[i]);
 
-    // receive right motor states
-    odrive_right.getEncoderEstimates(&right_estimates);
-    odrive_right.getTemperatures(&right_temperature);
-    odrive_right.getTorques(&right_torque);
+        motor_states[i].position = estimates[i].positionEstimate;
+        motor_states[i].velocity = estimates[i].velocityEstimate;
+        motor_states[i].FET_temperature = temps[i].FETTemperature;
+        motor_states[i].motor_temperature = temps[i].motorTemperature;
+        motor_states[i].torque = torques[i].torqueEstimate;
+        motor_states[i].target_torque = torques[i].torqueTarget;
+    }
 
-    // TODO: send motor states to UI
+    // send motor states to esp32, which will pass it to UI
+    HAL_StatusTypeDef res1 = HAL_UART_Transmit(&huart1, (uint8_t*)motor_states, sizeof(motor_states), 5);
+    if (res1 != HAL_OK) {
+    	printf("UART 1 transmission was not successful.\n");
+    }
 
-    // TODO: send motion data to RL policy
+    // send motion data to RL policy
+    float rl_data[4] = {
+        estimates[0].positionEstimate,
+        estimates[0].velocityEstimate,
+        estimates[1].positionEstimate,
+        estimates[1].velocityEstimate
+    };
+    HAL_StatusTypeDef res2 = HAL_UART_Transmit(&huart2, (uint8_t*)rl_data, sizeof(rl_data), 5);
+    if (res2 != HAL_OK) {
+    	printf("UART 2 transmission was not successful.\n");
+    }
 
     delay_task_until(next_wake_time, LOOP_PERIOD_MS);
   }

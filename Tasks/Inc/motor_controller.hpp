@@ -3,8 +3,6 @@
 #include "main.h"
 #include "odrives1.hpp"
 
-extern FDCAN_HandleTypeDef hfdcan1;
-
 extern ODRIVES1 odrive_left;
 extern ODRIVES1 odrive_right;
 
