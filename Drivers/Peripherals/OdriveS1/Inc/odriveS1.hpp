@@ -16,31 +16,47 @@
 class ODRIVES1 {
 private:
 	FDCAN_HandleTypeDef* _can;
-	FDCAN_RxHeaderTypeDef odriveCanRxHeader;
 	FDCAN_FilterTypeDef odriveCanFilter;
 
 	// TODO: Replace test bytes
 	uint8_t odriveTxBuffer[FDCAN_DLC_BYTES_8] =  {0};
-	uint8_t odriveRxBuffer[FDCAN_DLC_BYTES_8] = {0};
 
 public:
+	// Internal States
+	uint8_t odriveRxBuffer[FDCAN_DLC_BYTES_8] = {0};
+	FDCAN_RxHeaderTypeDef odriveCanRxHeader= {0};
+	odrive_can_version_t version = {0};
+	odrive_can_heartbeat_t heartbeat = {0};
+	odrive_can_error_t error = {0};
+	odrive_can_address_t address = {0};
+	odrive_can_encoder_estimates_t encoderEstimates = {0};
+	odrive_can_iq_t iq = {0};
+	odrive_can_temperature_t temperature = {0};
+	odrive_can_bus_t busVoltageCurrent = {0};
+	odrive_can_torque_t torque = {0};
+	odrive_can_power_t power = {0};
+	odrive_can_txSdo_t latestEndpointChange = {0};
+
+
 	ODRIVES1 (FDCAN_HandleTypeDef* fdcanhandle);
 
-	// Can send function
-	HAL_StatusTypeDef sendGetMsgCAN(uint32_t identifier);
-	HAL_StatusTypeDef sendSetMsgCAN(uint32_t identifier);
+	// CAN send function
+	HAL_StatusTypeDef sendMsgCAN(uint32_t identifier, bool isRemote);
 
 	// Getters
-	HAL_StatusTypeDef getVersion(odrive_can_version_t* version);
-	HAL_StatusTypeDef getHeartbeat(odrive_can_heartbeat_t* heartbeat);
-	HAL_StatusTypeDef getError(odrive_can_error_t* error);
-	HAL_StatusTypeDef getCANAddress(odrive_can_address_t* address);
-	HAL_StatusTypeDef getEncoderEstimates(odrive_can_encoder_estimates_t* encoderEstimates);
-	HAL_StatusTypeDef getIq(odrive_can_iq_t* iq);
-	HAL_StatusTypeDef getTemperatures(odrive_can_temperature_t* temperature);
-	HAL_StatusTypeDef getBusVoltageCurrent(odrive_can_bus_t* busVoltageCurrent);
-	HAL_StatusTypeDef getTorques(odrive_can_torque_t* torques);
-	HAL_StatusTypeDef getPowers(odrive_can_power_t* powers);
+	HAL_StatusTypeDef getVersion();
+	HAL_StatusTypeDef getHeartbeat();
+	HAL_StatusTypeDef getError();
+	HAL_StatusTypeDef getCANAddress();
+	HAL_StatusTypeDef getEncoderEstimates();
+	HAL_StatusTypeDef getIq();
+	HAL_StatusTypeDef getTemperatures();
+	HAL_StatusTypeDef getBusVoltageCurrent();
+	HAL_StatusTypeDef getTorques();
+	HAL_StatusTypeDef getPowers();
+
+	// Callback for messages from odrive
+	HAL_StatusTypeDef responseCallback(uint32_t identifier);
 
 	// TODO: Add proper parameters to following sections
 	// Setters

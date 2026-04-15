@@ -1,5 +1,4 @@
 #include "motor_controller.hpp"
-#include "odrives1.hpp"
 #include "stm32H7xx_hal_fdcan.h"
 
 extern FDCAN_HandleTypeDef hfdcan1;
@@ -14,15 +13,30 @@ static const osThreadAttr_t motorController_attributes = {
 
 void motorControllerMainLoop(void *arg)
 {
-  
-  ODRIVES1 odrive(&hfdcan1);
-  odrive_can_heartbeat_t heartbeat = {0};
+  bool isClosedLoop = false;
 
   while(true)
   {
-    BSP_LED_Toggle(LED_GREEN);
-    odrive.getHeartbeat(&heartbeat);
-    osDelay(1000);
+	  if (BSP_PB_GetState(BUTTON_USER) == BUTTON_PRESSED) {
+		  if (isClosedLoop) {
+			  odriveS1Handle->setAxisState(0x1);
+			  isClosedLoop = false;
+		  }
+		  else {
+			  odriveS1Handle->setAxisState(0x8);
+			  HAL_Delay(500);
+			  odriveS1Handle->setInputVelocity(2, 1);
+			  isClosedLoop = true;
+		  }
+	  }
+	  if (odriveS1Handle->heartbeat.axisState == 0x8) {
+		  BSP_LED_On(LED_RED);
+	  }
+	  else {
+		  BSP_LED_Off(LED_RED);
+	  }
+	  BSP_LED_Toggle(LED_GREEN);
+	  HAL_Delay(500);
   }
 }
 
