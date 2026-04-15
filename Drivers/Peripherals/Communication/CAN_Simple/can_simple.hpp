@@ -11,14 +11,14 @@
 
 // Command ID for each function
 static constexpr uint8_t CMD_ID_GET_VERSION = 0x00;
-static constexpr uint8_t CMD_ID_GET_HEARTBEAT = 0x01;
+static constexpr uint8_t CMD_ID_GET_HEARTBEAT = 0x01; //cyclic
 static constexpr uint8_t CMD_ID_ESTOP = 0x02;
-static constexpr uint8_t CMD_ID_GET_ERROR = 0x03;
+static constexpr uint8_t CMD_ID_GET_ERROR = 0x03; // cyclic
 static constexpr uint8_t CMD_ID_MODIFY_PARAMETERS = 0x04; // RxSdo on documentation
 static constexpr uint8_t CMD_ID_MODIFY_PARAMETERS_RESPONSE = 0x05 ;// TxSdo on documentation
 static constexpr uint8_t CMD_ID_GET_ADDRESS = 0x06;
 static constexpr uint8_t CMD_ID_SET_AXIS_STATE = 0x07;
-static constexpr uint8_t CMD_ID_GET_ENCODE_ESTIMATES = 0x09;
+static constexpr uint8_t CMD_ID_GET_ENCODE_ESTIMATES = 0x09; // cyclic
 static constexpr uint8_t CMD_ID_SET_CONTROLLER_MODE = 0x0b;
 static constexpr uint8_t CMD_ID_SET_INPUT_POSITION = 0x0c;
 static constexpr uint8_t CMD_ID_SET_INPUT_VELOCITY = 0x0d;
@@ -30,12 +30,12 @@ static constexpr uint8_t CMD_ID_SET_TRAJECTORY_INERTIA = 0x13;
 static constexpr uint8_t CMD_ID_GET_IQ = 0x14;
 static constexpr uint8_t CMD_ID_GET_TEMPERATURE = 0x15;
 static constexpr uint8_t CMD_ID_REBOOT = 0x16;
-static constexpr uint8_t CMD_ID_GET_BUS_VOLTAGE_CURRENT = 0x17;
+static constexpr uint8_t CMD_ID_GET_BUS_VOLTAGE_CURRENT = 0x17; // cyclic
 static constexpr uint8_t CMD_ID_CLEAR_ERRORS = 0x18;
 static constexpr uint8_t CMD_ID_SET_ABSOLUTE_POSITION = 0x19;
 static constexpr uint8_t CMD_ID_SET_POSITION_GAIN = 0x1a;
 static constexpr uint8_t CMD_ID_SET_VELOCITY_GAINS = 0x1b;
-static constexpr uint8_t CMD_ID_GET_TORQUES = 0x1c;
+static constexpr uint8_t CMD_ID_GET_TORQUES = 0x1c; // cyclic
 static constexpr uint8_t CMD_ID_GET_POWERS = 0x1d;
 static constexpr uint8_t CMD_ID_ENTER_DFU_MODE = 0x1f;
 

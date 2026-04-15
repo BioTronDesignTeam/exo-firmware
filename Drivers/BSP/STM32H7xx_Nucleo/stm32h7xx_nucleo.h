@@ -73,7 +73,7 @@
   * @{
   */
 #if defined (USE_NUCLEO_H745ZI_Q) || defined (USE_NUCLEO_H755ZI_Q) || defined (USE_NUCLEO_H743ZI2) ||\
-    defined (USE_NUCLEO_H7A3ZI_Q) || defined (USE_NUCLEO_H723ZG)
+    defined (USE_NUCLEO_H7A3ZI_Q) || defined (USE_NUCLEO_H723ZG) || defined (USE_NUCLEO_H753ZI)
 typedef enum
 {
   LED1 = 0,
@@ -84,7 +84,7 @@ typedef enum
   LED_RED = LED3,
   LEDn
 }Led_TypeDef;
-#else /* USE_NUCLEO_H743ZI || USE_NUCLEO_H753ZI */
+#else /* USE_NUCLEO_H743ZI */
 typedef enum
 {
   LED1 = 0,
@@ -177,7 +177,7 @@ typedef struct
   */
 #define STM32H7XX_NUCLEO_BSP_VERSION_MAIN   (0x01U) /*!< [31:24] main version */
 #define STM32H7XX_NUCLEO_BSP_VERSION_SUB1   (0x03U) /*!< [23:16] sub1 version */
-#define STM32H7XX_NUCLEO_BSP_VERSION_SUB2   (0x03U) /*!< [15:8]  sub2 version */
+#define STM32H7XX_NUCLEO_BSP_VERSION_SUB2   (0x04U) /*!< [15:8]  sub2 version */
 #define STM32H7XX_NUCLEO_BSP_VERSION_RC     (0x00U) /*!< [7:0]  release candidate */
 #define STM32H7XX_NUCLEO_BSP_VERSION        ((STM32H7XX_NUCLEO_BSP_VERSION_MAIN << 24)\
                                             |(STM32H7XX_NUCLEO_BSP_VERSION_SUB1 << 16)\
@@ -195,12 +195,12 @@ typedef struct
 #define LED1_GPIO_CLK_DISABLE()                 __HAL_RCC_GPIOB_CLK_DISABLE()
 
 #if defined (USE_NUCLEO_H745ZI_Q) || defined (USE_NUCLEO_H755ZI_Q) || defined (USE_NUCLEO_H743ZI2) ||\
-    defined (USE_NUCLEO_H7A3ZI_Q) || defined (USE_NUCLEO_H723ZG)
+    defined (USE_NUCLEO_H7A3ZI_Q) || defined (USE_NUCLEO_H723ZG) || defined (USE_NUCLEO_H753ZI)
 #define LED2_PIN                                GPIO_PIN_1
 #define LED2_GPIO_PORT                          GPIOE
 #define LED2_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOE_CLK_ENABLE()
 #define LED2_GPIO_CLK_DISABLE()                 __HAL_RCC_GPIOE_CLK_DISABLE()
-#else /* USE_NUCLEO_H743ZI || USE_NUCLEO_H753ZI */
+#else /* USE_NUCLEO_H743ZI */
 #define LED2_PIN                                GPIO_PIN_7
 #define LED2_GPIO_PORT                          GPIOB
 #define LED2_GPIO_CLK_ENABLE()                  __HAL_RCC_GPIOB_CLK_ENABLE()
