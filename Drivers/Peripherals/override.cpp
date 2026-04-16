@@ -2,6 +2,7 @@
 
 #include "stm32h7xx_nucleo.h"
 #include "drivers.hpp"
+#include <cstring>
 
 extern
 
@@ -33,5 +34,7 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
     {
       Error_Handler();
     }
+
+    memset(odriveS1Handle->odriveRxBuffer, 0 , 8);
   }
 }

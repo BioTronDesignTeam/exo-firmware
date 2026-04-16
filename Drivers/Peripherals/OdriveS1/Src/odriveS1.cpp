@@ -109,22 +109,22 @@ HAL_StatusTypeDef ODRIVES1::responseCallback(uint32_t identifier) {
 	switch (identifier) {
 		// The messages are encoded in little endian
 		case CMD_ID_GET_HEARTBEAT:
-			this->heartbeat.axisError = (uint32_t)(this->odriveRxBuffer[3] << 24 | this->odriveRxBuffer[2] << 16 | this->odriveRxBuffer[1] << 8 | this->odriveRxBuffer[0]);
+			memcpy(&this->heartbeat.axisError, this->odriveRxBuffer, 4);
 			this->heartbeat.axisState = this->odriveRxBuffer[4];
 			this->heartbeat.procedureResult = this->odriveRxBuffer[5];
 			this->heartbeat.trajectoryDoneFlag = this->odriveRxBuffer[6];
 		case CMD_ID_GET_ERROR:
-			this->error.activeErrors = (uint32_t)(this->odriveRxBuffer[3] << 24 | this->odriveRxBuffer[2] << 16 | this->odriveRxBuffer[1] << 8 | this->odriveRxBuffer[0]);
-			this->error.disarmReason = (uint32_t)(this->odriveRxBuffer[7] << 24 | this->odriveRxBuffer[6] << 16 | this->odriveRxBuffer[5] << 8 | this->odriveRxBuffer[4]);
+			memcpy(&this->error.activeErrors, this->odriveRxBuffer, 4);
+			memcpy(&this->error.disarmReason, &this->odriveRxBuffer[4], 4);
 		case CMD_ID_GET_ENCODE_ESTIMATES:
-			this->encoderEstimates.positionEstimate = (float)(this->odriveRxBuffer[3] << 24 | this->odriveRxBuffer[2] << 16 | this->odriveRxBuffer[1] << 8 | this->odriveRxBuffer[0]);
-			this->encoderEstimates.velocityEstimate = (float)(this->odriveRxBuffer[7] << 24 | this->odriveRxBuffer[6] << 16 | this->odriveRxBuffer[5] << 8 | this->odriveRxBuffer[4]);
+			memcpy(&this->encoderEstimates.positionEstimate, this->odriveRxBuffer, 4);
+			memcpy(&this->encoderEstimates.velocityEstimate, &this->odriveRxBuffer[4], 4);
 		case CMD_ID_GET_BUS_VOLTAGE_CURRENT:
-			this->busVoltageCurrent.busVoltage = (float)(this->odriveRxBuffer[3] << 24 | this->odriveRxBuffer[2] << 16 | this->odriveRxBuffer[1] << 8 | this->odriveRxBuffer[0]);
-			this->busVoltageCurrent.busCurrent = (float)(this->odriveRxBuffer[7] << 24 | this->odriveRxBuffer[6] << 16 | this->odriveRxBuffer[5] << 8 | this->odriveRxBuffer[4]);
+			memcpy(&this->busVoltageCurrent.busVoltage, this->odriveRxBuffer, 4);
+			memcpy(&this->busVoltageCurrent.busCurrent, &this->odriveRxBuffer[4], 4);
 		case CMD_ID_GET_TORQUES:
-			this->torque.torqueTarget = (float)(this->odriveRxBuffer[3] << 24 | this->odriveRxBuffer[2] << 16 | this->odriveRxBuffer[1] << 8 | this->odriveRxBuffer[0]);
-			this->torque.torqueEstimate = (float)(this->odriveRxBuffer[7] << 24 | this->odriveRxBuffer[6] << 16 | this->odriveRxBuffer[5] << 8 | this->odriveRxBuffer[4]);
+			memcpy(&this->torque.torqueTarget, this->odriveRxBuffer, 4);
+			memcpy(&this->torque.torqueEstimate, &this->odriveRxBuffer[4], 4);
 		case CMD_ID_GET_VERSION:
 			this->version.protocolVersion = this->odriveRxBuffer[0];
 			this->version.hwVersionMajor = this->odriveRxBuffer[1];
@@ -138,17 +138,17 @@ HAL_StatusTypeDef ODRIVES1::responseCallback(uint32_t identifier) {
 			// TODO
 		case CMD_ID_GET_ADDRESS:
 			this->address.nodeID = this->odriveRxBuffer[0];
-			this->address.serialNumber = (uint64_t)(this->odriveRxBuffer[5] << 32 | this->odriveRxBuffer[4] << 24 | this->odriveRxBuffer[3] << 16 | this->odriveRxBuffer[2] << 8 | this->odriveRxBuffer[1]);
-			this->address.connectionID = this->odriveRxBuffer[6];
+			memcpy((uint8_t *)&this->address.serialNumber + 2, &this->odriveRxBuffer[1], 6);
+			this->address.connectionID = this->odriveRxBuffer[7];
 		case CMD_ID_GET_IQ:
-			this->iq.iqSetpoint = (float)(this->odriveRxBuffer[3] << 24 | this->odriveRxBuffer[2] << 16 | this->odriveRxBuffer[1] << 8 | this->odriveRxBuffer[0]);
-			this->iq.iqMeasured = (float)(this->odriveRxBuffer[7] << 24 | this->odriveRxBuffer[6] << 16 | this->odriveRxBuffer[5] << 8 | this->odriveRxBuffer[4]);
+			memcpy(&this->iq.iqSetpoint, this->odriveRxBuffer, 4);
+			memcpy(&this->iq.iqMeasured, &this->odriveRxBuffer[4], 4);
 		case CMD_ID_GET_TEMPERATURE:
-			this->temperature.FETTemperature = (float)(this->odriveRxBuffer[3] << 24 | this->odriveRxBuffer[2] << 16 | this->odriveRxBuffer[1] << 8 | this->odriveRxBuffer[0]);
-			this->temperature.motorTemperature = (float)(this->odriveRxBuffer[7] << 24 | this->odriveRxBuffer[6] << 16 | this->odriveRxBuffer[5] << 8 | this->odriveRxBuffer[4]);
+			memcpy(&this->temperature.FETTemperature, this->odriveRxBuffer, 4);
+			memcpy(&this->temperature.FETTemperature, &this->odriveRxBuffer[4], 4);
 		case CMD_ID_GET_POWERS:
-			this->power.electricalPower = (float)(this->odriveRxBuffer[3] << 24 | this->odriveRxBuffer[2] << 16 | this->odriveRxBuffer[1] << 8 | this->odriveRxBuffer[0]);
-			this->power.mechanicalPower = (float)(this->odriveRxBuffer[7] << 24 | this->odriveRxBuffer[6] << 16 | this->odriveRxBuffer[5] << 8 | this->odriveRxBuffer[4]);
+			memcpy(&this->power.electricalPower, this->odriveRxBuffer, 4);
+			memcpy(&this->power.mechanicalPower, &this->odriveRxBuffer[4], 4);
 	}
 
 	return HAL_OK;
