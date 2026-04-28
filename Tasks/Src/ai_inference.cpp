@@ -41,10 +41,10 @@ int ai_run(const PolicyInputs *inputs, PolicyOutputs *outputs)
     in_data[3] = inputs->right_vel;
 
     // set up AI buffer descriptors
-    ai_buffer ai_input[AI_NETWORK_IN_NUM]   = AI_NETWORK_IN;
-    ai_buffer ai_output[AI_NETWORK_OUT_NUM] = AI_NETWORK_OUT;
+    ai_buffer *ai_input = ai_network_inputs_get(network, NULL);
+    ai_buffer *ai_output = ai_network_outputs_get(network, NULL);
 
-    ai_input[0].data  = AI_HANDLE_PTR(in_data);
+    ai_input[0].data = AI_HANDLE_PTR(in_data);
     ai_output[0].data = AI_HANDLE_PTR(out_data);
 
     // run inference

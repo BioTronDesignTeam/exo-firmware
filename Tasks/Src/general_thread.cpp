@@ -1,4 +1,5 @@
 #include "general_thread.hpp"
+#include <iostream>
 
 #define MAX_TORQUE 50.0
 #define MIN_TORQUE -50.0
@@ -17,8 +18,14 @@ struct MotorStates {
 	float velocity;
 	float torque;
 	float target_torque;
-	float FET_temperature;
 	float motor_temperature;
+};
+
+struct UI_Inputs {
+	MotorStates left;
+	MotorStates right;
+	float battery_voltage;
+	float battery_current;
 };
 
 static float clamp(float value, float max, float min) {
@@ -39,7 +46,7 @@ static void delay_task_until(uint32_t &next_wake_time) {
     } else {
         // missed deadline, reset to now
         next_wake_time = osKernelGetTickCount();
-    	printf("Control loop deadline missed!\n");
+    	std::cout << "Control loop deadline missed!" << std::endl;
     }
 }
 
@@ -49,14 +56,14 @@ void initTasks() {
 
 void mainLoop(void *arg) {
 	ODRIVES1 odrive_left(&hfdcan1);
-	ODRIVES1 odrive_right(&hfdcan2);
+	ODRIVES1 odrive_right(&hfdcan1);
 
 	ODRIVES1* odrives[2] = { &odrive_left, &odrive_right };
 	MotorStates motor_states[2];
 	odrive_can_encoder_estimates_t estimates[2];
 	odrive_can_temperature_t temps[2];
 	odrive_can_torque_t torques[2];
-	odrive_can_power_t powers[2];
+	odrive_can_bus_t bus_powers;
 
 	ai_init();
 
@@ -72,25 +79,34 @@ void mainLoop(void *arg) {
 		  odrives[i]->getEncoderEstimates(&estimates[i]);
 	      odrives[i]->getTemperatures(&temps[i]);
 	      odrives[i]->getTorques(&torques[i]);
-	      odrives[i]->getPowers(&powers[i]);
+	      if (i == 0) {
+	    	  // get the shared bus current and voltage
+	    	  odrives[0]->getBusVoltageCurrent(&bus_powers);
+	      }
 	      motor_states[i].position = estimates[i].positionEstimate;
 	      motor_states[i].velocity = estimates[i].velocityEstimate;
-	      motor_states[i].FET_temperature = temps[i].FETTemperature;
 	      motor_states[i].motor_temperature = temps[i].motorTemperature;
 	      motor_states[i].torque = torques[i].torqueEstimate;
 	      motor_states[i].target_torque = torques[i].torqueTarget;
 	  }
 
-	  // send motor states to esp32, which will pass it to UI
-	  if (HAL_UART_GetState(&huart1) == HAL_UART_STATE_READY) {
-		  HAL_StatusTypeDef res1 = HAL_UART_Transmit_IT(&huart1, (uint8_t*)motor_states, sizeof(motor_states));
+	  // send motor states to esp32, which will pass them to UI
+	  UI_Inputs ui_inputs = {
+		 motor_states[0],
+		 motor_states[1],
+		 bus_powers.busVoltage,
+		 bus_powers.busCurrent
+	  };
+
+	  if (HAL_UART_GetState(&huart4) == HAL_UART_STATE_READY) {
+		  HAL_StatusTypeDef res1 = HAL_UART_Transmit_IT(&huart4, (uint8_t*)&ui_inputs, sizeof(UI_Inputs));
 		  if (res1 != HAL_OK) {
 			  printf("UART1 transmission was not successful.\n");
 		  }
 	  }
 
 	  // send motion data to RL policy
-	  PolicyInputs inputs = {
+	  PolicyInputs ai_inputs = {
 	    estimates[0].positionEstimate,
 	    estimates[0].velocityEstimate,
 	    estimates[1].positionEstimate,
@@ -99,7 +115,7 @@ void mainLoop(void *arg) {
 	  PolicyOutputs outputs = {0};
 
 	  // run DRL policy
-	  if (ai_run(&inputs, &outputs) != 0) {
+	  if (ai_run(&ai_inputs, &outputs) != 0) {
 		  // inference failed. safe fallback
 		  outputs.left_torque = 0;
 		  outputs.right_torque = 0;

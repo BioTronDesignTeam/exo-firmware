@@ -1,8 +1,9 @@
 #pragma once
 #include "odriveS1.hpp"
-#include "ai_inference.h"
+#include "ai_inference.hpp"
 #include "stm32h7xx_hal.h"
 #include "cmsis_os2.h"
+#include "main.h"
 
 
 static float clamp(float value, float max, float min);

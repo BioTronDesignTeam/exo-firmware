@@ -51,7 +51,7 @@ extern "C" {
 /* USER CODE BEGIN EM */
 extern FDCAN_HandleTypeDef hfdcan1;
 extern I2C_HandleTypeDef hi2c2;
-extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart4;
 extern UART_HandleTypeDef huart2;
 
 void MX_USART2_UART_Init(void);
