@@ -1,6 +1,7 @@
 #include "websockets.h"
 #include "esp_log.h"
 #include "esp_websocket_client.h"
+#include "uart_consts.h"
 
 static const char *TAG = "WEBSOCKET";
 
@@ -8,22 +9,25 @@ static esp_websocket_client_handle_t client = NULL;
 
 static void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
     esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
-
+    static bool ws_connected;
     switch (event_id) {
         case WEBSOCKET_EVENT_CONNECTED:
+            ws_connected = true;
             ESP_LOGI(TAG, "WebSocket connected");
             break;
         case WEBSOCKET_EVENT_DISCONNECTED:
+            ws_connected = false;
             ESP_LOGI(TAG, "WebSocket disconnected");
             break;
         case WEBSOCKET_EVENT_DATA:
-            if (data->data_ptr && data->data_len > 0) {
+            if (ws_connected && data->data_ptr && data->data_len > 0) {
                 // copy to a null-terminated buffer before printing
                 char *buf = malloc(data->data_len + 1);
                 if (buf) {
                     memcpy(buf, data->data_ptr, data->data_len);
                     buf[data->data_len] = '\0';
                     ESP_LOGI(TAG, "Received: %s", buf);
+                    uart_write_bytes(UART_WEBSOCKET_PORT, data->data_ptr, data->data_len);
                     free(buf);
                 }
             }

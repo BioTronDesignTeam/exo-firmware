@@ -25,5 +25,9 @@ void app_main(void)
     vTaskDelay(5000 / portTICK_PERIOD_MS);
     websocket_send("testing from esp32 messaging");
 
-    xTaskCreate(uart_sim_task, "uart_sim_task", 4096, NULL, 5, NULL);
+    ring_buf_init(&g_ring);
+    uart_init();
+
+    xTaskCreate(uart_rx_task,  "uart_rx",   4096, NULL, 10, NULL);
+    xTaskCreate(uart_to_websocket_forwarding, "uart_to_ws_fwd",  4096, NULL,  5, NULL);
 }
