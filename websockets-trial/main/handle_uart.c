@@ -1,26 +1,4 @@
-/**
- * uart_reader.c
- * ESP32 FreeRTOS — UART receive → WebSocket forwarder
- *
- * Responsibilities
- * ----------------
- * ESP32    : magic-byte sync (catches framing errors locally),
- *            packet accumulation, CRC-16 append, WebSocket send.
- * Receiver : CRC validation, field parsing.
- *
- * Wire format sent over WebSocket (binary):
- *   [0]        magic      : 0xAB  (sync word)
- *   [1..N]     payload    : raw UART bytes, excluding the \n delimiter
- *   [N+1..N+2] CRC-16 LE : CRC of bytes [1..N] only (payload only)
- *
- * Receiver workflow:
- *   1. Confirm byte[0] == 0xAB
- *   2. Extract payload  bytes[1..len-3]
- *   3. Compute CRC-16 over payload, compare with bytes[len-2..len-1]
- *   4. Parse payload fields if CRC matches
- *
- * Build with ESP-IDF (idf.py build).
- */
+
  //message sent:
  //first byte magic to sync
  //1...N payload excluding \n
@@ -38,32 +16,19 @@
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "esp_timer.h"
-
+#include "websockets.h"
 
 #include "uart_consts.h"
+#include "handle_uart.h"
 
 static const char *TAG = "uart_fwd";
 
 
-typedef struct {
-    uint8_t  data[MAX_FRAME_LEN];
-    uint16_t len;                  /* total bytes: magic + payload + crc */
-    int64_t  timestamp_us;
-} raw_frame_t;
 
-//ring buffer
+frame_ring_buf_t g_ring;
 
-typedef struct {
-    raw_frame_t       frames[RING_BUF_CAPACITY];
-    volatile int      head;
-    volatile int      tail;
-    volatile int      count;
-    SemaphoreHandle_t mutex;
-} frame_ring_buf_t;
 
-static frame_ring_buf_t g_ring;
-
-static void ring_buf_init(frame_ring_buf_t *rb)
+void ring_buf_init(frame_ring_buf_t *rb)
 {
     memset(rb, 0, sizeof(*rb));
     rb->mutex = xSemaphoreCreateMutex();
@@ -132,7 +97,7 @@ static uint16_t crc16(const uint8_t *data, size_t length)
 
 typedef enum { WAIT_MAGIC, ACCUMULATE } rx_state_t;
 
-static void uart_rx_task(void *arg)
+void uart_rx_task(void *arg)
 {
     uint8_t     raw[MAX_PAYLOAD_LEN];
     raw_frame_t frame;
@@ -208,7 +173,7 @@ static void uart_rx_task(void *arg)
 }
 
 
-static void uart_to_websocket_forwarding(void *arg)
+void uart_to_websocket_forwarding(void *arg)
 {
     raw_frame_t frame;
 
@@ -219,15 +184,16 @@ static void uart_to_websocket_forwarding(void *arg)
             
             ESP_LOGI(TAG, "WS send: %u bytes (ts=%" PRId64 " us)",
                      frame.len, frame.timestamp_us);
-            websocket_send(frame)
+            websocket_send((const char*) frame.data);
         } else {
             vTaskDelay(pdMS_TO_TICKS(10));
         }
     }
+    
 }
 
 
-static void uart_init(void)
+void uart_init(void)
 {
     const uart_config_t cfg = {
         .baud_rate  = UART_BAUD,

@@ -1,3 +1,4 @@
+#include "driver/uart.h"
 #define UART_WEBSOCKET_PORT UART_NUM_1
 #define UART_BAUD           115200
 #define UART_TX_PIN         17
