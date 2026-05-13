@@ -21,6 +21,7 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include "app_x-cube-ai.h"
+#include "general_thread.hpp"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -125,11 +126,11 @@ int main(void)
   MX_UART4_Init();
   MX_X_CUBE_AI_Init();
   /* USER CODE BEGIN 2 */
-
   /* USER CODE END 2 */
-
+  
   /* Init scheduler */
   osKernelInitialize();
+  initTasks();
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
