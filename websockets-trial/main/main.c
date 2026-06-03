@@ -1,29 +1,55 @@
-#include "wifi.h"
-#include "nvs_flash.h"
-#include "websockets.h"
+#include "eduroam_wifi.h"
+#include "http.h"
+
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "handle_uart.h"
 
-#include "esp_wifi.h"
-#include "esp_event.h"
-#include "esp_log.h"
-#include "nvs_flash.h"
+static const char *TAG = "main";
 
-#include "lwip/netdb.h"
+#define POST_INTERVAL_MS  30000
 
+// placeholder, make read from uart function to replace this
+static void build_payload(char *buf, size_t buf_len)
+{
+    float temperature = 22.4f;   // TODO: read from sensor
+    int   humidity    = 55;      // TODO: read from sensor
+    uint32_t uptime   = (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
+
+    snprintf(buf, buf_len,
+             "{\"temperature\":%.1f,\"humidity\":%d,\"uptime_ms\":%lu}",
+             temperature, humidity, (unsigned long)uptime);
+}
+
+// main task 
 void app_main(void)
 {
-    ESP_ERROR_CHECK(wifi_init());
-    struct addrinfo *res;
-    int err = getaddrinfo("ws://172.20.10.8:8765", NULL, NULL, &res);
-    ESP_LOGI("DNS", "getaddrinfo result: %d", err);
-    if (err == 0) freeaddrinfo(res);
+    ESP_LOGI(TAG, "ESP32 eduroam HTTP POST starting");
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    websocket_init("ws://172.20.10.8:8765");
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
-    websocket_send("testing from esp32 messaging");
 
-    xTaskCreate(uart_sim_task, "uart_sim_task", 4096, NULL, 5, NULL);
+    if (!wifi_connect()) {
+        ESP_LOGE(TAG, "cannot connect to eduroam");
+        return;
+    }
+
+    char payload[256];
+
+    while (1) {
+        if (!wifi_ensure_connected()) {
+            ESP_LOGW(TAG, "wifi unavailable, retrying...");
+            vTaskDelay(pdMS_TO_TICKS(POST_INTERVAL_MS));
+            continue;
+        }
+
+        build_payload(payload, sizeof(payload));
+        http_result_t result = http_post_json(payload);
+
+        if (result.success) {
+            ESP_LOGI(TAG, "POST OK (%d)", result.status_code);
+        } else {
+            ESP_LOGW(TAG, "POST failed (%d)", result.status_code);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(POST_INTERVAL_MS));
+    }
 }

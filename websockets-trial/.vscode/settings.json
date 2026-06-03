@@ -9,5 +9,11 @@
     "--background-index",
     "--query-driver=**",
     "--compile-commands-dir=c:\\Users\\frank\\Documents\\Biotron\\websockets-trial\\build"
+  ],
+  "idf.flashType": "JTAG",
+  "idf.portWin": "COM3",
+  "idf.openOcdConfigs": [
+    "interface/ftdi/esp32_devkitj_v1.cfg",
+    "target/esp32.cfg"
   ]
 }
