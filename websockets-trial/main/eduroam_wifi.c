@@ -136,31 +136,31 @@ bool wifi_connect(void)
     }
 
     // temporary scan snippet — delete after confirming eduroam is visible
-esp_wifi_set_mode(WIFI_MODE_STA);
-esp_wifi_start();
+    esp_wifi_set_mode(WIFI_MODE_STA);
+    esp_wifi_start();
 
-wifi_scan_config_t scan_cfg = {
-    .ssid        = NULL,   // NULL = scan all
-    .bssid       = NULL,
-    .channel     = 0,
-    .show_hidden = false,
-    .scan_type   = WIFI_SCAN_TYPE_ACTIVE,
-};
-esp_wifi_scan_start(&scan_cfg, true);  // true = block until done
+    wifi_scan_config_t scan_cfg = {
+        .ssid        = NULL,   // NULL = scan all
+        .bssid       = NULL,
+        .channel     = 0,
+        .show_hidden = false,
+        .scan_type   = WIFI_SCAN_TYPE_ACTIVE,
+    };
+    esp_wifi_scan_start(&scan_cfg, true);  // true = block until done
 
-uint16_t ap_count = 0;
-esp_wifi_scan_get_ap_num(&ap_count);
-ESP_LOGI("scan", "Found %d APs", ap_count);
+    uint16_t ap_count = 0;
+    esp_wifi_scan_get_ap_num(&ap_count);
+    ESP_LOGI("scan", "Found %d APs", ap_count);
 
-static wifi_ap_record_t ap_list[20];
-uint16_t max = 20;
-esp_wifi_scan_get_ap_records(&max, ap_list);
+    static wifi_ap_record_t ap_list[20];
+    uint16_t max = 20;
+    esp_wifi_scan_get_ap_records(&max, ap_list);
 
-for (int i = 0; i < max; i++) {
-    ESP_LOGI("scan", "[%d] ssid:%-32s  ch:%d  rssi:%d  auth:%d",
-             i, ap_list[i].ssid, ap_list[i].primary,
-             ap_list[i].rssi, ap_list[i].authmode);
-}
+    for (int i = 0; i < max; i++) {
+        ESP_LOGI("scan", "[%d] ssid:%-32s  ch:%d  rssi:%d  auth:%d",
+                i, ap_list[i].ssid, ap_list[i].primary,
+                ap_list[i].rssi, ap_list[i].authmode);
+    }
 
 
     int attempts = 0;
