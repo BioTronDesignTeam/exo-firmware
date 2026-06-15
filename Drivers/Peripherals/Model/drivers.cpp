@@ -1,6 +1,6 @@
 #include "drivers.hpp"
 // Credit: WARG efs-zeropilot for code structure!
-
+#include <new>
 // All the hardware handles
 extern FDCAN_HandleTypeDef hfdcan1;
 
@@ -13,6 +13,6 @@ alignas(ODRIVES1) static uint8_t odrives1Storage[sizeof(ODRIVES1)];
 ODRIVES1 *odriveS1Handle = nullptr;
 
 // Driver Initialization
-void initDrivers() {
+void initializeDrivers() {
 	odriveS1Handle = new (&odrives1Storage) ODRIVES1(&hfdcan1);
 }
