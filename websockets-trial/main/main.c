@@ -1,6 +1,6 @@
 #include "eduroam_wifi.h"
 #include "http.h"
-
+#include "handle_uart.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -26,15 +26,22 @@ void app_main(void)
 {
     ESP_LOGI(TAG, "ESP32 eduroam HTTP POST starting");
 
-
+    /*
     if (!wifi_connect()) {
         ESP_LOGE(TAG, "cannot connect to eduroam");
         return;
     }
+    */
+
+    ESP_LOGW(TAG, "UART intiialized");
+    uart_init();
+    ESP_LOGW(TAG, "Starting UART mirror task");
+    xTaskCreate(&uart2_mirror_task, "uart2_mirror", 2048, NULL, 5, NULL);
 
     char payload[256];
 
     while (1) {
+        /*
         if (!wifi_ensure_connected()) {
             ESP_LOGW(TAG, "wifi unavailable, retrying...");
             vTaskDelay(pdMS_TO_TICKS(POST_INTERVAL_MS));
@@ -49,7 +56,8 @@ void app_main(void)
         } else {
             ESP_LOGW(TAG, "POST failed (%d)", result.status_code);
         }
-
-        vTaskDelay(pdMS_TO_TICKS(POST_INTERVAL_MS));
+        
+        */
+       vTaskDelay(pdMS_TO_TICKS(POST_INTERVAL_MS));
     }
 }

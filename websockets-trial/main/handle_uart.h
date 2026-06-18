@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 
 typedef struct __attribute__((packed)) {
     uint32_t example1;
@@ -10,4 +11,5 @@ typedef struct __attribute__((packed)) {
 
 telemetry_data_t read_telemetry_from_uart();
 void uart_init();
+void uart2_mirror_task(void *arg);
 

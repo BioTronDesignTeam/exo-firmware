@@ -144,11 +144,11 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  initDrivers();
-  initTasks();
-  //defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
+  initTasks();
+  initDrivers();
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 

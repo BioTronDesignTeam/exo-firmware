@@ -46,15 +46,32 @@ void uart_init() {
     uart_get_baudrate(uart_stm, &actual_baud);
     ESP_LOGI("UART", "Requested: 921600, Actual: %lu", actual_baud);
 }
+void uart2_mirror_task(void *arg)
+{
+    ESP_LOGW(TAG, "UART mirror task started, mirroring UART2 to stdout");
+    uint8_t data[128];
+    while (1) {
+        int buffered = 0;
+        uart_get_buffered_data_len(uart_stm, (size_t*)&buffered);
+        ESP_LOGW(TAG, "buffered bytes: %d", buffered);
+        int len = uart_read_bytes(uart_stm, data, sizeof(data)-1, pdMS_TO_TICKS(100));
+        if (len > 0) {
+            data[len] = 0;
+            ESP_LOGW("UART", "%s", (char*)data);
+        }
+    }
+ 
+    free(data); // unreachable, kept for tidiness
+}
 
 telemetry_data_t read_telemetry_from_uart() {
     telemetry_data_t data;
 
     enum UART_STATE state = WAIT_AA;
     while (true) {
+        uint8_t byte;
         switch (state) {
             case WAIT_AA:
-                uint8_t byte;
                 uart_read_bytes(uart_stm, &byte, 1, portMAX_DELAY);
                 if (byte == 0xAA) {
                     state = WAIT_55;
@@ -62,7 +79,6 @@ telemetry_data_t read_telemetry_from_uart() {
                 break;
 
             case WAIT_55:
-                uint8_t byte;
                 uart_read_bytes(uart_stm, &byte, 1, portMAX_DELAY);
                 if (byte == 0x55) {
                     state = READ_DATA;
@@ -90,5 +106,6 @@ telemetry_data_t read_telemetry_from_uart() {
     }
     return data;
 }
+
 
 
