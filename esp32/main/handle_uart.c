@@ -124,18 +124,29 @@ void read_telemetry_from_uart() {
                 break;
                 }
                 */
-               
-                telemetry_packet_t data;
+                uint16_t data_length;
+                uart_read_bytes(uart_stm, &data_length, sizeof(data_length), portMAX_DELAY);
+                telemetry_data_t data;
                 uart_read_bytes(uart_stm, &data, sizeof(data), portMAX_DELAY);
+                uint16_t received_crc;
+                uart_read_bytes(uart_stm, &received_crc, sizeof(received_crc), portMAX_DELAY);
                 ESP_LOGI(TAG, "Read telemetry packet");
                 //check crc
-                if (data.crc != crc16((uint8_t*)&data, offsetof(telemetry_packet_t, crc))) {
-                    ESP_LOGW(TAG, "CRC mismatch: expected %04X, got %04X", data.crc, crc16((uint8_t*)&data, offsetof(telemetry_packet_t, crc)));
+                telemetry_packet_t received_packet = {
+                    .header = {MAGIC_BYTE_1, MAGIC_BYTE_2},
+                    .data_length = data_length,
+                    .data = data,
+                    .crc = received_crc
+                };
+                uint16_t computed_crc = crc16((uint8_t*)&received_packet, 
+                            offsetof(telemetry_packet_t, crc)); //lol this can definitely be rewritten so its easier to read
+                if (received_crc != computed_crc) {
+                    ESP_LOGW(TAG, "CRC mismatch: expected %04X, got %04X", received_crc, computed_crc);
                     state = WAIT_AA; // reset if crc is wrong
                     break;
                 }
-                // do something with the data
-                ESP_LOGI(TAG, "Received telemetry data: example1=%lu, example2=%lu, example3=%lu", data.data.example1, data.data.example2, data.data.example3);
+                // do something with the data here
+                ESP_LOGI(TAG, "Received telemetry data: example1=%lu, example2=%lu, example3=%lu", data.example1, data.example2, data.example3);
                 state = WAIT_AA; // reset for next packet
             break;
         }
