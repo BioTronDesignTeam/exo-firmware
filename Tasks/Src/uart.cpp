@@ -2,6 +2,10 @@
 #include "uart.hpp"
 #include <cmsis_os2.h>
 
+//uart2: estop
+//uart4: to esp
+//uart5: to jetson or rpi
+
 extern "C" {
 
 #include "main.h"
@@ -63,15 +67,14 @@ void write_to_esp(telemetry_data_t data) {
 	telemetry_packet_t packet;
 	packet.header[0] = 0xAA;
 	packet.header[1] = 0x55;
-	packet.data_length = sizeof(telemetry_data_t);
 	memcpy (&packet.data, &data, sizeof(data));
 
-	packet.crc = crc16((uint8_t*)&packet, offsetof(telemetry_packet_t, crc));
+	packet.crc = crc16((uint8_t*)&packet.data, sizeof(telemetry_data_t));
 
 	HAL_UART_Transmit(&huart4, (uint8_t*)&packet, sizeof(telemetry_packet_t), HAL_MAX_DELAY);
 }
 
-void send_telemetry_to_esp(void* arg) {
+void send_telemetry_to_esp(void* arg) { //to esp32
 
 	for ( ;; ) {
 		telemetry_data_t data = get_telemetry_data();
@@ -80,6 +83,8 @@ void send_telemetry_to_esp(void* arg) {
 	}
 
 }
+
+
 
 
 void init_uart_tasks() {
@@ -99,4 +104,53 @@ void init_uart_tasks() {
 	spamUARTHandle = osThreadNew(spamUART, NULL, &spamUARTAttributes);
 	send_telemetry_to_esp_handle = osThreadNew(send_telemetry_to_esp, NULL, &send_telemetry_to_esp_attributes);
 
+}
+
+enum UART_STATE {
+    WAIT_AA,
+    WAIT_55,
+    READ_DATA
+};
+
+void read_telemetry_from_uart_esp() {
+
+    enum UART_STATE state = WAIT_AA;
+    while (true) {
+        uint8_t byte;
+        switch (state) {
+            case WAIT_AA:
+                HAL_UART_Receive(&huart4, &byte, 1, HAL_MAX_DELAY);
+                if (byte == MAGIC_BYTE_1) {
+                    state = WAIT_55;
+                }
+            break;
+
+            case WAIT_55:
+                HAL_UART_Receive(&huart4, &byte, 1, HAL_MAX_DELAY);
+                if (byte == MAGIC_BYTE_2) {
+                    state = READ_DATA;
+                } else {
+                    state = WAIT_AA; // reset if not correct
+                }
+            break;
+
+            case READ_DATA:
+
+
+                telemetry_data_t data;
+                HAL_UART_Receive(&huart4, &data, sizeof(data), HAL_MAX_DELAY);
+                uint16_t received_crc;
+                HAL_UART_Receive(&huart4, &received_crc, sizeof(received_crc), HAL_MAX_DELAY);
+
+                //check crc
+                uint16_t computed_crc = crc16((uint8_t*)&data, sizeof(data)); //crc16((uint8_t*)&packet,
+                if (received_crc != computed_crc) {
+                    state = WAIT_AA; // reset if crc is wrong
+                    break;
+                }
+                // do something with the data here
+                state = WAIT_AA; // reset for next packet
+            break;
+        }
+    }
 }

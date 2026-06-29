@@ -83,7 +83,6 @@ void write_data_to_stm (telemetry_data_t data) {
     telemetry_packet_t packet;
     packet.header[0] = MAGIC_BYTE_1;
     packet.header[1] = MAGIC_BYTE_2;
-    packet.data_length = sizeof(data);
     memcpy(&packet.data, &data, sizeof(data));
 
     packet.crc = crc16((uint8_t*)&packet, offsetof(telemetry_packet_t, crc));
@@ -116,30 +115,16 @@ void read_telemetry_from_uart() {
             break;
                 
             case READ_DATA:
-                /*uint32_t data_length;
-                uart_read_bytes(uart_stm, &data_length, 1, portMAX_DELAY);
-                if (data_length != telemetry_data_size) { // expecting 3 uint32_t = 12 bytes
-                ESP_LOGW(TAG, "Unexpected data length: %lu", data_length);
-                state = WAIT_AA; // reset if length is wrong
-                break;
-                }
-                */
-                uint16_t data_length;
-                uart_read_bytes(uart_stm, &data_length, sizeof(data_length), portMAX_DELAY);
+                
+
                 telemetry_data_t data;
                 uart_read_bytes(uart_stm, &data, sizeof(data), portMAX_DELAY);
                 uint16_t received_crc;
                 uart_read_bytes(uart_stm, &received_crc, sizeof(received_crc), portMAX_DELAY);
                 ESP_LOGI(TAG, "Read telemetry packet");
                 //check crc
-                telemetry_packet_t received_packet = {
-                    .header = {MAGIC_BYTE_1, MAGIC_BYTE_2},
-                    .data_length = data_length,
-                    .data = data,
-                    .crc = received_crc
-                };
-                uint16_t computed_crc = crc16((uint8_t*)&received_packet, 
-                            offsetof(telemetry_packet_t, crc)); //lol this can definitely be rewritten so its easier to read
+                
+                uint16_t computed_crc = crc16((uint8_t*)&data, sizeof(data)); //crc16((uint8_t*)&packet,
                 if (received_crc != computed_crc) {
                     ESP_LOGW(TAG, "CRC mismatch: expected %04X, got %04X", received_crc, computed_crc);
                     state = WAIT_AA; // reset if crc is wrong
