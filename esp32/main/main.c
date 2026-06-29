@@ -4,6 +4,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <esp_task_wdt.h>
 
 static const char *TAG = "main";
 
@@ -35,9 +36,10 @@ void app_main(void)
 
     ESP_LOGW(TAG, "UART intiialized");
     uart_init();
-    ESP_LOGW(TAG, "Starting UART mirror task");
-    xTaskCreate(&uart2_mirror_task, "uart2_mirror", 2048, NULL, 5, NULL);
-
+    //ESP_LOGW(TAG, "Starting UART mirror task");
+    //xTaskCreate(&uart2_mirror_task, "uart2_mirror", 2048, NULL, 5, NULL);
+    //ESP_LOGW(TAG, "Starting telemetry read task");
+    xTaskCreate(&read_telemetry_from_uart, "read_telemetry", 4096, NULL, 1, NULL);
     char payload[256];
 
     while (1) {

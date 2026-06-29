@@ -90,53 +90,78 @@ void write_data_to_stm (telemetry_data_t data) {
     uart_write_bytes(uart_stm, (const char*)&packet, sizeof(packet));
 }
 
-void read_telemetry_from_uart() {
-    
-    enum UART_STATE state = WAIT_AA;
-    while (true) {
-        uint8_t byte;
-        switch (state) {
-            case WAIT_AA:
-                uart_read_bytes(uart_stm, &byte, 1, portMAX_DELAY);
-                ESP_LOGI(TAG, "Read byte: %02X", byte);
-                if (byte == MAGIC_BYTE_1) {
-                    state = WAIT_55;
-                }
-            break;
-                
-            case WAIT_55:
-                uart_read_bytes(uart_stm, &byte, 1, portMAX_DELAY);
-                ESP_LOGI(TAG, "Read byte: %02X", byte); 
-                if (byte == MAGIC_BYTE_2) {
-                    state = READ_DATA;
-                } else {
-                    state = WAIT_AA; // reset if not correct
-                }
-            break;
-                
-            case READ_DATA:
-                
+#include "esp_task_wdt.h"
 
+#define UART_TIMEOUT_MS  100   // tune to your baud rate / packet rate
+
+void read_telemetry_from_uart() {
+    esp_task_wdt_config_t wdt_config = {
+        .timeout_ms = 5000,
+        .idle_core_mask = 0,
+        .trigger_panic = true,
+    };
+    esp_task_wdt_reconfigure(&wdt_config);
+    esp_task_wdt_add(NULL);
+    enum UART_STATE state = WAIT_AA;
+
+    while (true) {
+        esp_task_wdt_reset();   // feed watchdog while idle
+        uint8_t byte;
+        int bytes_read;
+        uint8_t data_buffer[sizeof(telemetry_packet_t)];
+
+        switch (state) {
+            
+            case WAIT_AA:
+                bytes_read = uart_read_bytes(uart_stm, &byte, 1, pdMS_TO_TICKS(UART_TIMEOUT_MS));
+                if (bytes_read > 0 && byte == MAGIC_BYTE_1) state = WAIT_55;
+            break;
+                    
+            case WAIT_55:
+                bytes_read = uart_read_bytes(uart_stm, &byte, 1, pdMS_TO_TICKS(UART_TIMEOUT_MS));
+                if (bytes_read <= 0 || byte != MAGIC_BYTE_2) state = WAIT_AA;
+                else state = READ_DATA;
+            break;
+
+            case READ_DATA:
+                ESP_LOGI(TAG, "Reading telemetry data...");
                 telemetry_data_t data;
-                uart_read_bytes(uart_stm, &data, sizeof(data), portMAX_DELAY);
-                uint16_t received_crc;
-                uart_read_bytes(uart_stm, &received_crc, sizeof(received_crc), portMAX_DELAY);
-                ESP_LOGI(TAG, "Read telemetry packet");
-                //check crc
-                
-                uint16_t computed_crc = crc16((uint8_t*)&data, sizeof(data)); //crc16((uint8_t*)&packet,
-                if (received_crc != computed_crc) {
-                    ESP_LOGW(TAG, "CRC mismatch: expected %04X, got %04X", received_crc, computed_crc);
-                    state = WAIT_AA; // reset if crc is wrong
+
+                bytes_read = uart_read_bytes(uart_stm, (uint8_t*)&data,
+                                             sizeof(data),
+                                             pdMS_TO_TICKS(UART_TIMEOUT_MS));
+                if (bytes_read < (int)sizeof(data)) {
+                    ESP_LOGW(TAG, "Short read on data payload");
+                    esp_task_wdt_reset();
+                    state = WAIT_AA;
                     break;
                 }
-                // do something with the data here
-                ESP_LOGI(TAG, "Received telemetry data: example1=%lu, example2=%lu, example3=%lu", data.example1, data.example2, data.example3);
-                state = WAIT_AA; // reset for next packet
+
+                uint16_t received_crc;
+                bytes_read = uart_read_bytes(uart_stm, (uint8_t*)&received_crc,
+                                             sizeof(received_crc),
+                                             pdMS_TO_TICKS(UART_TIMEOUT_MS));
+                if (bytes_read < (int)sizeof(received_crc)) {
+                    ESP_LOGW(TAG, "Short read on CRC");
+                    esp_task_wdt_reset();
+                    state = WAIT_AA;
+                    break;
+                }
+
+                uint16_t computed_crc = crc16((uint8_t*)&data, sizeof(data));
+                if (received_crc != computed_crc) {
+                    ESP_LOGW(TAG, "CRC mismatch: expected %04X, got %04X",
+                             computed_crc, received_crc);
+                    esp_task_wdt_reset();
+                    state = WAIT_AA;
+                    break;
+                }
+
+                ESP_LOGI(TAG, "Received telemetry: example1=%lu example2=%lu example3=%lu",
+                         data.example1, data.example2, data.example3);
+                esp_task_wdt_reset();
+                state = WAIT_AA;
             break;
         }
     }
 }
-
-
-

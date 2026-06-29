@@ -58,7 +58,7 @@ void spamUART(void* arg) {
 #include <stdlib.h>
 telemetry_data_t get_telemetry_data() { //placeholder, get real ones from odrive
 	srand(12932);
-	telemetry_data_t sample_data = {rand(), rand(), rand()};
+	telemetry_data_t sample_data = {1, 2, 3};
 
 	return sample_data;
 }
@@ -71,7 +71,18 @@ void write_to_esp(telemetry_data_t data) {
 
 	packet.crc = crc16((uint8_t*)&packet.data, sizeof(telemetry_data_t));
 
-	HAL_UART_Transmit(&huart4, (uint8_t*)&packet, sizeof(telemetry_packet_t), HAL_MAX_DELAY);
+	HAL_StatusTypeDef err = HAL_UART_Transmit(&huart4, (uint8_t*)&packet, sizeof(telemetry_packet_t), HAL_MAX_DELAY);
+
+	if (err == HAL_OK) {
+		BSP_LED_Toggle(LED_GREEN);
+	}
+	if (err == HAL_ERROR) {
+		BSP_LED_Toggle(LED_RED);
+	}
+	if (err == HAL_TIMEOUT) {
+		BSP_LED_Toggle(LED_YELLOW);
+	}
+	osDelay(500);
 }
 
 void send_telemetry_to_esp(void* arg) { //to esp32
@@ -112,8 +123,10 @@ enum UART_STATE {
     READ_DATA
 };
 
-void read_telemetry_from_uart_esp() {
-
+void read_telemetry_from_uart_esp() { //placeholder, need to figure out command structure being sent from esp
+	//this code can probably be repurposed into the receiver on the jetson
+	uint8_t MAGIC_BYTE_1 = 0xAA;
+	uint8_t MAGIC_BYTE_2 = 0x55;
     enum UART_STATE state = WAIT_AA;
     while (true) {
         uint8_t byte;
@@ -138,9 +151,9 @@ void read_telemetry_from_uart_esp() {
 
 
                 telemetry_data_t data;
-                HAL_UART_Receive(&huart4, &data, sizeof(data), HAL_MAX_DELAY);
+                HAL_UART_Receive(&huart4, (uint8_t*)&data, sizeof(data), HAL_MAX_DELAY);
                 uint16_t received_crc;
-                HAL_UART_Receive(&huart4, &received_crc, sizeof(received_crc), HAL_MAX_DELAY);
+                HAL_UART_Receive(&huart4, (uint8_t*)&received_crc, sizeof(received_crc), HAL_MAX_DELAY);
 
                 //check crc
                 uint16_t computed_crc = crc16((uint8_t*)&data, sizeof(data)); //crc16((uint8_t*)&packet,
