@@ -14,11 +14,12 @@
 #include <stdlib.h>
 #include <time.h>
 #include "crc.h"
+#include "esp_task_wdt.h"
 
 #define MAGIC_BYTE_1 0xAA
 #define MAGIC_BYTE_2 0x55
 
-static const char *TAG = "UART_SIM";
+static const char *TAG = "HANDLE_UART";
 const uart_port_t uart_stm = UART_NUM_2;
 const uart_port_t uart_estop = UART_NUM_1;
 
@@ -62,23 +63,11 @@ void uart_init() {
     uart_get_baudrate(uart_stm, &actual_baud);
     ESP_LOGI("UART", "Requested: 921600, Actual: %lu", actual_baud);
 }
-void uart2_mirror_task(void *arg) //debugging
-{
-    ESP_LOGW(TAG, "UART mirror task started, mirroring UART2 to stdout");
-    uint8_t data[128];
-    while (1) {
-        int buffered = 0;
-        uart_get_buffered_data_len(uart_stm, (size_t*)&buffered);
-        ESP_LOGW(TAG, "buffered bytes: %d", buffered);
-        int len = uart_read_bytes(uart_stm, data, sizeof(data)-1, pdMS_TO_TICKS(100));
-        if (len > 0) {
-            data[len] = 0;
-            ESP_LOGW("UART", "%s", (char*)data);
-        }
-    }
- 
-    free(data); // unreachable, kept for tidiness
-}
+
+
+//TODO:
+//change this to the command structure with the enum, according receive function in the stm code Tasks/Src/uart.cpp is also commented out with a similar todo
+/*
 void write_data_to_stm (telemetry_data_t data) {
     telemetry_packet_t packet;
     packet.header[0] = MAGIC_BYTE_1;
@@ -89,8 +78,8 @@ void write_data_to_stm (telemetry_data_t data) {
 
     uart_write_bytes(uart_stm, (const char*)&packet, sizeof(packet));
 }
+    */
 
-#include "esp_task_wdt.h"
 
 #define UART_TIMEOUT_MS  100   // tune to your baud rate / packet rate
 
@@ -165,3 +154,4 @@ void read_telemetry_from_uart() {
         }
     }
 }
+
