@@ -31,30 +31,6 @@ uint16_t crc16(uint8_t *data, uint32_t length)
     return crc;
 }
 
-void spamUART(void* arg) {
-	uint64_t count = 0;
-
-	for ( ;; ) {
-		char example[64];
-		snprintf(example, sizeof(example), "printing to uart: %llu" , count);
-
-		HAL_StatusTypeDef err = HAL_UART_Transmit(&huart5, (uint8_t*)example, strlen(example), HAL_MAX_DELAY);
-
-		count++;
-
-		if (err == HAL_OK) {
-			BSP_LED_Toggle(LED_YELLOW);
-		}
-		if (err == HAL_ERROR) {
-			BSP_LED_Toggle(LED_GREEN);
-		}
-		if (err == HAL_TIMEOUT) {
-			BSP_LED_Toggle(LED_RED);
-		}
-		osDelay(500);
-	}
-}
-
 #include <stdlib.h>
 telemetry_data_t get_telemetry_data() { //placeholder, get real ones from odrive
 	srand(12932);
@@ -94,9 +70,6 @@ void send_telemetry_to_esp(void* arg) { //to esp32
 	}
 
 }
-
-
-
 
 void init_uart_tasks() {
 	osThreadId_t spamUARTHandle;
