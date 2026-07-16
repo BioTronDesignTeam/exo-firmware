@@ -1,7 +1,9 @@
 #pragma once
 
 #include "odriveS1.hpp"
+#include "mpu6050.hpp"
 
 extern ODRIVES1 *odriveS1Handle;
+extern MPU6050 *MPU6050Handle;
 
 void initializeDrivers();

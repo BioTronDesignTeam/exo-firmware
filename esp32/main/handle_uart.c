@@ -113,8 +113,8 @@ void read_telemetry_from_uart() {
             break;
 
             case READ_DATA:
-                ESP_LOGI(TAG, "Reading telemetry data...");
-                telemetry_data_t data;
+                ESP_LOGI(TAG, "Reading imu data...");
+                mpu6050_data_t data;
 
                 bytes_read = uart_read_bytes(uart_stm, (uint8_t*)&data,
                                              sizeof(data),
@@ -146,8 +146,9 @@ void read_telemetry_from_uart() {
                     break;
                 }
 
-                ESP_LOGI(TAG, "Received telemetry: example1=%lu example2=%lu example3=%lu",
-                         data.example1, data.example2, data.example3);
+                ESP_LOGI(TAG, "IMU accel[g]=(%.3f, %.3f, %.3f) gyro[dps]=(%.2f, %.2f, %.2f) temp=%.2fC",
+                         data.accel_x, data.accel_y, data.accel_z,
+                         data.gyro_x, data.gyro_y, data.gyro_z, data.temperature);
                 esp_task_wdt_reset();
                 state = WAIT_AA;
             break;
