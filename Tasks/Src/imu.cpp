@@ -2,7 +2,7 @@
 #include "mpu6050.hpp"
 #include "drivers.hpp" 
 #include <cmsis_os2.h>
-
+#include <string.h>
 extern "C" {
 #include "main.h"
 }
