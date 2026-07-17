@@ -18,6 +18,7 @@ void show_imu_success(void* arg) {
 		} else {
 			BSP_LED_Toggle(LED_RED);
 		}
+		osDelay(500);
 	}
 }
 extern "C" void initDrivers() {
