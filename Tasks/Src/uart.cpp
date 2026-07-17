@@ -85,7 +85,7 @@ void init_uart_tasks() {
 		.stack_size = 1024,
 		.priority = (osPriority_t) osPriorityNormal
 	};
-	spamUARTHandle = osThreadNew(spamUART, NULL, &spamUARTAttributes);
+	//spamUARTHandle = osThreadNew(spamUART, NULL, &spamUARTAttributes);
 	send_telemetry_to_esp_handle = osThreadNew(send_telemetry_to_esp, NULL, &send_telemetry_to_esp_attributes);
 
 }

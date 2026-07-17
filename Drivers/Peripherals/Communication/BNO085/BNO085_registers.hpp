@@ -1,4 +1,4 @@
-#pragma
+#pragma once
 
 // I2C address (SA0 pin low = 0x4a << 1)
 static constexpr uint8_t BNO085_I2C_ADDR = 0x4a << 1;

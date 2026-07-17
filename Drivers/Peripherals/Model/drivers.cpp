@@ -16,7 +16,7 @@ ODRIVES1 *odriveS1Handle = nullptr;
 BNO085 *bno085Handle = nullptr;
 
 // Driver Initialization
-void initDrivers() {
+void initializeDrivers() {
 	odriveS1Handle = new (&odrives1Storage) ODRIVES1(&hfdcan1);
 	bno085Handle = new (&bno085Storage) BNO085(&hi2c1);
 }
