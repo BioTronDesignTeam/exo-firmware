@@ -2,6 +2,7 @@
 #include "uart.hpp"
 #include <cmsis_os2.h>
 #include "imu.hpp"
+#include "drivers.hpp"
 
 //uart2: estop
 //uart4: to esp
@@ -47,7 +48,7 @@ telemetry_data_t get_telemetry_data() {
     data.mpu6050_data.gyro_x  = MPU6050Handle->mpu6050_data.gyro_x;
     data.mpu6050_data.gyro_y  = MPU6050Handle->mpu6050_data.gyro_y;
     data.mpu6050_data.gyro_z  = MPU6050Handle->mpu6050_data.gyro_z;
-    data.mpu6050_data.temperature = MPU6050Handle->mpu6050_data.temp;
+    data.mpu6050_data.temp = MPU6050Handle->mpu6050_data.temp;
 
     return data;
 }
