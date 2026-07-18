@@ -7,6 +7,10 @@
 BNO085::BNO085(I2C_HandleTypeDef* i2cHandle):_hi2c(i2cHandle) {}
 
 bool BNO085::begin() {
+
+	HAL_I2C_Master_Receive(_hi2c, BNO085_I2C_ADDR, _rxBuffer, 64, HAL_MAX_DELAY);
+	HAL_Delay(100);
+
 	//verify connection by checking product ID
 	uint8_t productIDPayload[] = {0xF9};
 
@@ -19,7 +23,7 @@ bool BNO085::begin() {
 	}
 
 	//enable reports
-	enableReport(ROT_VECTOR, 10000);
+	//enableReport(ROT_VECTOR, 10000);
 	return true;
 }
 

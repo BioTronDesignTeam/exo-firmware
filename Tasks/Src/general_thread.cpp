@@ -1,22 +1,34 @@
 #include "general_thread.hpp"
 #include "drivers.hpp"
 #include "uart.hpp"
+#include "BNO085_registers.hpp"
 
+extern "C" {
+
+#include "main.h"
+
+}
+
+extern I2C_HandleTypeDef hi2c1;
+extern BNO085 *bno085Handle;
 
 
 extern "C" void initTasks() {
-	init_uart_tasks();
+	//init_uart_tasks();
 	//motorControllerInitTask();
 }
 
 
 void show_imu_success(void* arg) {
-
+	bool works = bno085Handle->begin();
 	for ( ;; ) {
-		if (bno085Handle->begin()) {
-			BSP_LED_Toggle(LED_GREEN);
+		if (HAL_I2C_IsDeviceReady(&hi2c1, BNO085_I2C_ADDR, 1, 10) == HAL_OK) {
+			BSP_LED_Toggle(LED_YELLOW);
 		} else {
 			BSP_LED_Toggle(LED_RED);
+		}
+		if (works) {
+			BSP_LED_Toggle(LED_GREEN);
 		}
 		osDelay(500);
 	}
