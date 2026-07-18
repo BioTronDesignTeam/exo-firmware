@@ -11,14 +11,23 @@ extern UART_HandleTypeDef huart4;
 extern uint16_t crc16(uint8_t *data, uint32_t length); 
 
 
+void read_imu_task(void *arg) {
+    for ( ;; ) {
+        if (MPU6050Handle != nullptr) {
+            if (MPU6050Handle->getAll() != HAL_OK) {
+                BSP_LED_On(LED_RED);
+            }
+        }
+        osDelay(10); 
+    }
+}
+
+
+
 mpu6050_data_t get_imu_data() {
     mpu6050_data_t data = {0};
 
     if (MPU6050Handle == nullptr) {
-        return data; 
-    }
-    if (MPU6050Handle->getAll() != HAL_OK) {
-        BSP_LED_On(LED_RED); 
         return data;
     }
 
@@ -66,14 +75,19 @@ void send_imu_to_esp(void *arg) { //to esp32
 }
 
 void init_imu() {
-    // osThreadId_t spamUARTHandle;
+	osThreadId_t read_imu_task_handle;
 	osThreadId_t send_imu_to_esp_handle;
 
+    static const osThreadAttr_t read_imu_attributes = {
+        .name = "ReadIMU",
+        .stack_size = 1024,
+        .priority = (osPriority_t) osPriorityBelowNormal7
+    };
     static const osThreadAttr_t send_imu_attributes = {
         .name = "SendIMUtoESP",
         .stack_size = 1024,
-        .priority = (osPriority_t) osPriorityNormal
+        .priority = (osPriority_t) osPriorityBelowNormal7
     };
-    // spamUARTHandle = osThreadNew(spamUART, NULL, &spamUARTAttributes);
+    read_imu_task_handle = osThreadNew(read_imu_task, NULL, &read_imu_attributes);
     send_imu_to_esp_handle = osThreadNew(send_imu_to_esp, NULL, &send_imu_attributes);
 }
