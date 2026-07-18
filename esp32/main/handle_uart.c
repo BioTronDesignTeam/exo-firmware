@@ -19,9 +19,12 @@
 #define MAGIC_BYTE_1 0xAA
 #define MAGIC_BYTE_2 0x55
 
+#define UART_TIMEOUT_MS  100   // tune to your baud rate / packet rate
+
+
 static const char *TAG = "HANDLE_UART";
 const uart_port_t uart_stm = UART_NUM_2;
-const uart_port_t uart_estop = UART_NUM_1;
+const uart_port_t uart_print = UART_NUM_1;
 
 enum UART_STATE {
     WAIT_AA,
@@ -32,7 +35,7 @@ enum UART_STATE {
 void uart_init() {
     //             uart_num, rx_buffer_size, tx_buffer_size, queue_size, queue_handle, flags
     ESP_ERROR_CHECK(uart_driver_install(uart_stm, 1024, 1024, 0, NULL, 0));
-    ESP_ERROR_CHECK(uart_driver_install(uart_estop, 1024, 1024, 0, NULL, 0));
+    ESP_ERROR_CHECK(uart_driver_install(uart_print, 1024, 1024, 0, NULL, 0));
 
     uart_config_t uart_config_stm = {
         .baud_rate = 921600,
@@ -42,7 +45,7 @@ void uart_init() {
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
     };
 
-    uart_config_t uart_config_estop = {
+    uart_config_t uart_config_print = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
@@ -52,10 +55,10 @@ void uart_init() {
     
     // Configure UART parameters
     ESP_ERROR_CHECK(uart_param_config(uart_stm  , &uart_config_stm));
-    ESP_ERROR_CHECK(uart_param_config(uart_estop, &uart_config_estop));
+    ESP_ERROR_CHECK(uart_param_config(uart_print, &uart_config_print));
     //                                     //tx rx
     ESP_ERROR_CHECK(uart_set_pin(uart_stm,   17, 16, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
-    ESP_ERROR_CHECK(uart_set_pin(uart_estop, 19, 18, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+    ESP_ERROR_CHECK(uart_set_pin(uart_print, 19, 18, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
 
     //make sure esp32 can actually match the baud rate
@@ -80,8 +83,16 @@ void write_data_to_stm (telemetry_data_t data) {
 }
     */
 
-
-#define UART_TIMEOUT_MS  100   // tune to your baud rate / packet rate
+void stm_print() {
+    uint8_t buffer[1024];
+    while (true) {
+        int bytes_read = uart_read_bytes(uart_stm, buffer, sizeof(buffer) - 1, pdMS_TO_TICKS(UART_TIMEOUT_MS));
+        if (bytes_read > 0) {
+            buffer[bytes_read] = '\0'; // Null-terminate the string
+            ESP_LOGI(TAG, "STM: %s", buffer);
+        }
+    }
+}
 
 void read_telemetry_from_uart() {
     esp_task_wdt_config_t wdt_config = {

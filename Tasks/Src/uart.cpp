@@ -14,9 +14,8 @@ extern "C" {
 
 }
 
-extern UART_HandleTypeDef huart4;
-extern UART_HandleTypeDef huart5;
-extern UART_HandleTypeDef huart2;
+extern UART_HandleTypeDef huart7;
+extern UART_HandleTypeDef huart6;
 
 uint16_t crc16(uint8_t *data, uint32_t length)
 {
@@ -62,7 +61,7 @@ void write_to_esp(telemetry_data_t data) {
 
 	packet.crc = crc16((uint8_t*)&packet.data, sizeof(telemetry_data_t));
 
-	HAL_StatusTypeDef err = HAL_UART_Transmit(&huart4, (uint8_t*)&packet, sizeof(telemetry_packet_t), HAL_MAX_DELAY);
+	HAL_StatusTypeDef err = HAL_UART_Transmit(&huart7, (uint8_t*)&packet, sizeof(telemetry_packet_t), HAL_MAX_DELAY);
 
 	if (err == HAL_OK) {
 		BSP_LED_Toggle(LED_GREEN);
@@ -114,14 +113,14 @@ void read_telemetry_from_uart_esp() { //placeholder, need to figure out command 
         uint8_t byte;
         switch (state) {
             case WAIT_AA:
-                HAL_UART_Receive(&huart4, &byte, 1, HAL_MAX_DELAY);
+                HAL_UART_Receive(&huart7, &byte, 1, HAL_MAX_DELAY);
                 if (byte == MAGIC_BYTE_1) {
                     state = WAIT_55;
                 }
             break;
 
             case WAIT_55:
-                HAL_UART_Receive(&huart4, &byte, 1, HAL_MAX_DELAY);
+                HAL_UART_Receive(&huart7, &byte, 1, HAL_MAX_DELAY);
                 if (byte == MAGIC_BYTE_2) {
                     state = READ_DATA;
                 } else {
@@ -133,9 +132,9 @@ void read_telemetry_from_uart_esp() { //placeholder, need to figure out command 
 
 
                 telemetry_data_t data;
-                HAL_UART_Receive(&huart4, (uint8_t*)&data, sizeof(data), HAL_MAX_DELAY);
+                HAL_UART_Receive(&huart7, (uint8_t*)&data, sizeof(data), HAL_MAX_DELAY);
                 uint16_t received_crc;
-                HAL_UART_Receive(&huart4, (uint8_t*)&received_crc, sizeof(received_crc), HAL_MAX_DELAY);
+                HAL_UART_Receive(&huart7, (uint8_t*)&received_crc, sizeof(received_crc), HAL_MAX_DELAY);
 
                 //check crc
                 uint16_t computed_crc = crc16((uint8_t*)&data, sizeof(data)); //crc16((uint8_t*)&packet,

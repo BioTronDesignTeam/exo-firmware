@@ -1,10 +1,18 @@
 #pragma once
 #include <stdint.h>
 
+// Data structs
+typedef struct __attribute__((packed)){
+    float accel_x, accel_y, accel_z; //units: g
+    float gyro_x, gyro_y, gyro_z; //units: deg/s
+    float temp; //units: celsius
+} mpu6050_data_t;
+
 typedef struct __attribute__((packed)) { //UPDATE THESE IN THE ESP FOLDER AS WELL!!
     uint32_t example1;
     uint32_t example2;
     uint32_t example3;
+    mpu6050_data_t mpu6050_data;
 } telemetry_data_t;
 
 typedef struct __attribute__((packed)) {
