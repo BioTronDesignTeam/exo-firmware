@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include "mpu6050_data.hpp"
 
 typedef struct __attribute__((packed)) { //UPDATE THESE IN THE ESP FOLDER AS WELL!!
     uint32_t example1;

@@ -80,6 +80,8 @@
 								<option id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.optimization.level.1703046095" name="Optimization level" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.optimization.level" useByScannerDiscovery="false"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.includepaths.471306918" name="Include paths (-I)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.includepaths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="../Core/Inc"/>
+									<listOptionValue builtIn="false" value="../Drivers/Peripherals/IMU/BNO085"/>
+									<listOptionValue builtIn="false" value="../Drivers/Peripherals/IMU/MPU6050"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/STM32H7xx_Nucleo"/>
@@ -90,8 +92,8 @@
 									<listOptionValue builtIn="false" value="../Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F"/>
 									<listOptionValue builtIn="false" value="../Tasks/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/Peripherals/Communication/CAN_Simple"/>
-									<listOptionValue builtIn="false" value="../Drivers/Peripherals/Model"/>
-									<listOptionValue builtIn="false" value="../Drivers/Peripherals/OdriveS1/Inc"/>
+									<listOptionValue builtIn="false" value="../Drivers/Peripherals/Instances"/>
+									<listOptionValue builtIn="false" value="../Drivers/Peripherals/Motors/OdriveS1"/>
 									<listOptionValue builtIn="false" value="../Drivers/CMSIS/RTOS2/Include"/>
 								</option>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.definedsymbols.1568838923" name="Define symbols (-D)" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.cpp.compiler.option.definedsymbols" useByScannerDiscovery="false" valueType="definedSymbols">

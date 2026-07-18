@@ -9,6 +9,7 @@
 
 #include "stm32H7xx_hal.h"
 #include "mpu6050_registers.hpp"
+#include "mpu6050_data.hpp"
 class MPU6050{
 private: 
     I2C_HandleTypeDef* _i2c;

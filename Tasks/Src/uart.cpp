@@ -2,6 +2,7 @@
 #include "uart.hpp"
 #include <cmsis_os2.h>
 #include "imu.hpp"
+#include "drivers.hpp"
 
 //uart2: estop
 //uart4: to esp
@@ -48,7 +49,7 @@ telemetry_data_t get_telemetry_data() {
     data.mpu6050_data.gyro_x  = MPU6050Handle->mpu6050_data.gyro_x;
     data.mpu6050_data.gyro_y  = MPU6050Handle->mpu6050_data.gyro_y;
     data.mpu6050_data.gyro_z  = MPU6050Handle->mpu6050_data.gyro_z;
-    data.mpu6050_data.temperature = MPU6050Handle->mpu6050_data.temp;
+    data.mpu6050_data.temp = MPU6050Handle->mpu6050_data.temp;
 
     return data;
 }
@@ -86,20 +87,14 @@ void send_telemetry_to_esp(void* arg) { //to esp32
 }
 
 void init_uart_tasks() {
-	osThreadId_t spamUARTHandle;
 	osThreadId_t send_telemetry_to_esp_handle;
 
-	static const osThreadAttr_t spamUARTAttributes = {
-	    .name = "SpamUART",
-	    .stack_size = 1024,
-	    .priority = (osPriority_t) osPriorityNormal
-	};
+
 	static const osThreadAttr_t send_telemetry_to_esp_attributes = {
 		.name = "SendTelemetrytoESP",
 		.stack_size = 1024,
 		.priority = (osPriority_t) osPriorityNormal
 	};
-	spamUARTHandle = osThreadNew(spamUART, NULL, &spamUARTAttributes);
 	send_telemetry_to_esp_handle = osThreadNew(send_telemetry_to_esp, NULL, &send_telemetry_to_esp_attributes);
 
 }

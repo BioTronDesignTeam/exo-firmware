@@ -72,7 +72,7 @@ HAL_StatusTypeDef MPU6050::getTemp(){
     HAL_StatusTypeDef status = HAL_I2C_Mem_Read(_i2c, MPU6050_I2C_ADDR, TEMP_OUT_H, I2C_MEMADD_SIZE_8BIT, rxBuffer, 2, HAL_MAX_DELAY);
     
     int16_t rawTemp = (int16_t)(rxBuffer[0] << 8 | rxBuffer[1]);
-    mpu6050_temperature =  rawTemp/340.0f + 36.53f;
+    mpu6050_data.temp =  rawTemp/340.0f + 36.53f;
 
     return status;
 }
@@ -125,9 +125,9 @@ HAL_StatusTypeDef MPU6050::calibrateGyro(){
     int numSamples = 500;
     for(int i = 0; i < numSamples; i++){
         getGyro();
-        sumX += mpu6050_gyro.x;
-        sumY += mpu6050_gyro.y;
-        sumZ += mpu6050_gyro.z;
+        sumX += mpu6050_data.gyro_x;
+        sumY += mpu6050_data.gyro_y;
+        sumZ += mpu6050_data.gyro_z;
         HAL_Delay(1); // delay between samples
     }
     _gyroBiasX = sumX / numSamples;
