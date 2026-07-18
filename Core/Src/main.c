@@ -71,9 +71,10 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_FDCAN1_Init(void);
 static void MX_I2C2_Init(void);
+static void MX_UART4_Init(void);
+static void MX_UART5_Init(void);
+static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
-static void MX_UART7_Init(void);
-static void MX_USART6_UART_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -116,9 +117,10 @@ int main(void)
   MX_GPIO_Init();
   MX_FDCAN1_Init();
   MX_I2C2_Init();
+  MX_UART4_Init();
+  MX_UART5_Init();
+  MX_USART2_UART_Init();
   MX_I2C1_Init();
-  MX_UART7_Init();
-  MX_USART6_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
