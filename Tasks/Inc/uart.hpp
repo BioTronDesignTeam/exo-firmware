@@ -5,6 +5,7 @@ typedef struct __attribute__((packed)) { //UPDATE THESE IN THE ESP FOLDER AS WEL
     uint32_t example1;
     uint32_t example2;
     uint32_t example3;
+    mpu6050_data_t mpu6050_data;
 } telemetry_data_t;
 
 typedef struct __attribute__((packed)) {

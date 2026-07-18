@@ -58,7 +58,5 @@ enum class GyroRange : uint8_t {
     DEG2000 = 0x18  // ±2000 deg/s, sensitivity: 16.4  LSB/deg/s
 };
 
-// Data structs
-typedef struct { float x, y, z; } mpu6050_accel_t; // units: g
-typedef struct { float x, y, z; } mpu6050_gyro_t;  // units: deg/s
+
 //typedef struct { float celsius;  } mpu6050_temp_t;

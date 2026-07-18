@@ -24,9 +24,8 @@ private:
 public:
 
     // Sensor data structs
-    mpu6050_accel_t mpu6050_acceleration = {0};
-    mpu6050_gyro_t mpu6050_gyro = {0};
-    float mpu6050_temperature = {0};
+    mpu6050_data_t mpu6050_data = {0};
+
 
     // Constructor stores the I2C handle. It also wakes up the MPU6050 and verifies communication by reading the WHO_AM_I register.
     // Turns on the red LED if communication fails.

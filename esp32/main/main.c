@@ -26,21 +26,19 @@ static void build_payload(char *buf, size_t buf_len)
 // main task 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "ESP32 eduroam HTTP POST starting");
-
-    
-    if (!wifi_connect()) {
-        ESP_LOGE(TAG, "cannot connect to eduroam");
-        return;
-    }
+   
+    // if (!wifi_connect()) {
+    //     ESP_LOGE(TAG, "cannot connect to eduroam");
+    //     return;
+    // }
     
 
     uart_init();
     ESP_LOGW(TAG, "UART intiialized");
     ESP_LOGW(TAG, "Starting telemetry read task");
-    //xTaskCreate(&read_telemetry_from_uart, "read_telemetry", 4096, NULL, 1, NULL);
-    ESP_LOGW(TAG, "Starting websockets task");
-    xTaskCreate(&websocket_task, "websocket_task", 4096, NULL, 1, NULL); //might want to move this into main
+    xTaskCreate(&read_telemetry_from_uart, "read_telemetry", 4096, NULL, 1, NULL);
+    //ESP_LOGW(TAG, "Starting websockets task");
+    //xTaskCreate(&websocket_task, "websocket_task", 4096, NULL, 1, NULL); //might want to move this into main
     char payload[256];
 
     while (1) {

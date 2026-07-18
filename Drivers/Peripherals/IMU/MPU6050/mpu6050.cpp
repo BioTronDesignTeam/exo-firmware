@@ -25,19 +25,19 @@ HAL_StatusTypeDef MPU6050::getAll(){
     int16_t accelx = (int16_t)(rxBuffer[0] << 8 | rxBuffer[1]);
     int16_t accely = (int16_t)(rxBuffer[2] << 8 | rxBuffer[3]);
     int16_t accelz = (int16_t)(rxBuffer[4] << 8 | rxBuffer[5]);
-    mpu6050_acceleration.x = accelx/_accelSensitivity;
-    mpu6050_acceleration.y = accely/_accelSensitivity;
-    mpu6050_acceleration.z = accelz/_accelSensitivity;
+    mpu6050_data.accel_x = accelx/_accelSensitivity;
+    mpu6050_data.accel_y = accely/_accelSensitivity;
+    mpu6050_data.accel_z = accelz/_accelSensitivity;
 
     int16_t rawTemp = (int16_t)(rxBuffer[6] << 8 | rxBuffer[7]);
-    mpu6050_temperature =  rawTemp/340.0f + 36.53f;
+    mpu6050_data.temp =  rawTemp/340.0f + 36.53f;
 
     int16_t gyrox  = (int16_t)(rxBuffer[8]  << 8 | rxBuffer[9]);
     int16_t gyroy  = (int16_t)(rxBuffer[10] << 8 | rxBuffer[11]);
     int16_t gyroz  = (int16_t)(rxBuffer[12] << 8 | rxBuffer[13]);
-    mpu6050_gyro.x = gyrox / _gyroSensitivity - _gyroBiasX;
-    mpu6050_gyro.y = gyroy / _gyroSensitivity - _gyroBiasY;
-    mpu6050_gyro.z = gyroz / _gyroSensitivity - _gyroBiasZ;
+    mpu6050_data.gyro_x = gyrox / _gyroSensitivity - _gyroBiasX;
+    mpu6050_data.gyro_y = gyroy / _gyroSensitivity - _gyroBiasY;
+    mpu6050_data.gyro_z = gyroz / _gyroSensitivity - _gyroBiasZ;
 
     return status;
 }
@@ -48,9 +48,9 @@ HAL_StatusTypeDef MPU6050::getAccel(){
     int16_t accelx = (int16_t)(rxBuffer[0] << 8 | rxBuffer[1]);
     int16_t accely = (int16_t)(rxBuffer[2] << 8 | rxBuffer[3]);
     int16_t accelz = (int16_t)(rxBuffer[4] << 8 | rxBuffer[5]);
-    mpu6050_acceleration.x = accelx/_accelSensitivity;
-    mpu6050_acceleration.y = accely/_accelSensitivity;
-    mpu6050_acceleration.z = accelz/_accelSensitivity;
+    mpu6050_data.accel_x = accelx/_accelSensitivity;
+    mpu6050_data.accel_y = accely/_accelSensitivity;
+    mpu6050_data.accel_z = accelz/_accelSensitivity;
 
     return status;
 }
@@ -61,9 +61,9 @@ HAL_StatusTypeDef MPU6050::getGyro(){
     int16_t gyrox  = (int16_t)(rxBuffer[0]  << 8 | rxBuffer[1]);
     int16_t gyroy  = (int16_t)(rxBuffer[2] << 8 | rxBuffer[3]);
     int16_t gyroz  = (int16_t)(rxBuffer[4] << 8 | rxBuffer[5]);
-    mpu6050_gyro.x = gyrox / _gyroSensitivity - _gyroBiasX;
-    mpu6050_gyro.y = gyroy / _gyroSensitivity - _gyroBiasY;
-    mpu6050_gyro.z = gyroz / _gyroSensitivity - _gyroBiasZ;
+    mpu6050_data.gyro_x = gyrox / _gyroSensitivity - _gyroBiasX;
+    mpu6050_data.gyro_y = gyroy / _gyroSensitivity - _gyroBiasY;
+    mpu6050_data.gyro_z = gyroz / _gyroSensitivity - _gyroBiasZ;
 
     return status;
 }

@@ -1,6 +1,7 @@
 #include <cstring>
 #include "uart.hpp"
 #include <cmsis_os2.h>
+#include "imu.hpp"
 
 //uart2: estop
 //uart4: to esp
@@ -31,12 +32,25 @@ uint16_t crc16(uint8_t *data, uint32_t length)
     return crc;
 }
 
-#include <stdlib.h>
-telemetry_data_t get_telemetry_data() { //placeholder, get real ones from odrive
-	srand(12932);
-	telemetry_data_t sample_data = {1, 2, 3};
 
-	return sample_data;
+telemetry_data_t get_telemetry_data() {
+    telemetry_data_t data = {0};
+    data.example1 = 1;
+    data.example2 = 2; 
+    data.example3 = 3;
+    if (MPU6050Handle == nullptr) {
+        return data;
+    }
+
+    data.mpu6050_data.accel_x = MPU6050Handle->mpu6050_data.accel_x;
+    data.mpu6050_data.accel_y = MPU6050Handle->mpu6050_data.accel_y;
+    data.mpu6050_data.accel_z = MPU6050Handle->mpu6050_data.accel_z;
+    data.mpu6050_data.gyro_x  = MPU6050Handle->mpu6050_data.gyro_x;
+    data.mpu6050_data.gyro_y  = MPU6050Handle->mpu6050_data.gyro_y;
+    data.mpu6050_data.gyro_z  = MPU6050Handle->mpu6050_data.gyro_z;
+    data.mpu6050_data.temperature = MPU6050Handle->mpu6050_data.temp;
+
+    return data;
 }
 
 void write_to_esp(telemetry_data_t data) {
