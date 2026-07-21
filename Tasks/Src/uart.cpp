@@ -3,20 +3,21 @@
 #include <cmsis_os2.h>
 #include "imu.hpp"
 #include "drivers.hpp"
-
 //uart2: estop
 //uart4: to esp
 //uart5: to jetson or rpi
 
-extern "C" {
-
-#include "main.h"
-
-}
 
 extern UART_HandleTypeDef huart7;
-extern UART_HandleTypeDef huart6;
+extern UART_HandleTypeDef huart2;
 
+HAL_StatusTypeDef esp_print(uint8_t* str, uint16_t len) {
+	HAL_StatusTypeDef err = HAL_UART_Transmit(&huart2, str, len, 100);
+	if (err == HAL_OK) {
+		BSP_LED_Toggle(LED_RED);
+	}
+    return err;
+}
 uint16_t crc16(uint8_t *data, uint32_t length)
 {
     uint16_t crc = 0x0000;
@@ -62,16 +63,14 @@ void write_to_esp(telemetry_data_t data) {
 	packet.crc = crc16((uint8_t*)&packet.data, sizeof(telemetry_data_t));
 
 	HAL_StatusTypeDef err = HAL_UART_Transmit(&huart7, (uint8_t*)&packet, sizeof(telemetry_packet_t), HAL_MAX_DELAY);
-
+    //esp_print((uint8_t*)"Sent telemetry data to ESP\r\n", 24);
 	if (err == HAL_OK) {
 		BSP_LED_Toggle(LED_GREEN);
 	}
 	if (err == HAL_ERROR) {
 		BSP_LED_Toggle(LED_RED);
 	}
-	if (err == HAL_TIMEOUT) {
-		BSP_LED_Toggle(LED_YELLOW);
-	}
+	
 	osDelay(500);
 }
 

@@ -26,5 +26,7 @@ typedef struct __attribute__((packed)) {
 void read_telemetry_from_uart();
 void write_data_to_stm (telemetry_data_t data);
 void uart_init();
-void uart2_mirror_task(void *arg) ;
+void uart2_mirror_task(void *arg);
+void stm_print();
+
 

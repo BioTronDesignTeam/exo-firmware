@@ -14,7 +14,7 @@ MPU6050::MPU6050(I2C_HandleTypeDef* i2cHandle):_i2c(i2cHandle){
     HAL_I2C_Mem_Read(_i2c, MPU6050_I2C_ADDR, WHO_AM_I, I2C_MEMADD_SIZE_8BIT, &id,
         1, HAL_MAX_DELAY);
     if(id != MPU6050_WHO_AM_I_VAL){
-        BSP_LED_On(LED_RED);
+        //BSP_LED_On(LED_);
     }
 }
 

@@ -64,7 +64,9 @@ void uart_init() {
     //make sure esp32 can actually match the baud rate
     uint32_t actual_baud;
     uart_get_baudrate(uart_stm, &actual_baud);
-    ESP_LOGI("UART", "Requested: 921600, Actual: %lu", actual_baud);
+    ESP_LOGI("UART STM", "Requested: 921600, Actual: %lu", actual_baud);
+    uart_get_baudrate(uart_print, &actual_baud);
+    ESP_LOGI("UART PRINT", "Requested: 115200, Actual: %lu", actual_baud);
 }
 
 
@@ -86,11 +88,12 @@ void write_data_to_stm (telemetry_data_t data) {
 void stm_print() {
     uint8_t buffer[1024];
     while (true) {
-        int bytes_read = uart_read_bytes(uart_stm, buffer, sizeof(buffer) - 1, pdMS_TO_TICKS(UART_TIMEOUT_MS));
+        int bytes_read = uart_read_bytes(uart_print, buffer, sizeof(buffer) - 1, pdMS_TO_TICKS(UART_TIMEOUT_MS));
         if (bytes_read > 0) {
             buffer[bytes_read] = '\0'; // Null-terminate the string
-            ESP_LOGI(TAG, "STM: %s", buffer);
+            ESP_LOGI(TAG, "STM: length %d, data: %s", bytes_read, buffer);
         }
+        
     }
 }
 

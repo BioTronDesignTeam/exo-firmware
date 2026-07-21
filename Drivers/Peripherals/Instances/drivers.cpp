@@ -24,5 +24,4 @@ void initializeDrivers() {
 	odriveS1Handle = new (&odrives1Storage) ODRIVES1(&hfdcan1);
 	MPU6050Handle = new (&mpu6050Storage) MPU6050(&hi2c1);
 	bno085Handle = new (&bno085Storage) BNO085(&hi2c1);
-
 }
