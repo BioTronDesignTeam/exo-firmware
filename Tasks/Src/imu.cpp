@@ -10,7 +10,8 @@ extern "C" {
 
 void update_mpu6050(void *arg) {
     for ( ;; ) {
-        esp_print((uint8_t*)"Updating MPU6050\r\n", 19);
+        //esp_print((uint8_t*)"Updating MPU6050 lol wrong imu\r\n", 19);
+        ESP_PRINT("Updating MPU6050 lol wrong imu\r\n");
         BSP_LED_Toggle(LED_YELLOW);
 //        if (MPU6050Handle != nullptr) {
 //            if (MPU6050Handle->getAll() != HAL_OK) {

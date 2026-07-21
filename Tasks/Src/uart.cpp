@@ -3,6 +3,8 @@
 #include <cmsis_os2.h>
 #include "imu.hpp"
 #include "drivers.hpp"
+#include "rtos_objects.hpp"
+#include <string.h>
 //uart2: estop
 //uart4: to esp
 //uart5: to jetson or rpi
@@ -10,13 +12,30 @@
 
 extern UART_HandleTypeDef huart7;
 extern UART_HandleTypeDef huart2;
+extern QueueHandle_t esp_print_queue;
 
+
+void empty_print_queue_to_esp(void* arg) {
+    log_message_t msg;
+
+    for (;;) {
+        // Block indefinitely until a message arrives
+        if (xQueueReceive(esp_print_queue, &msg, portMAX_DELAY) == pdPASS) {
+            HAL_UART_Transmit(&huart2, msg.data, msg.len, 100);
+            BSP_LED_Toggle(LED_RED);
+        }
+    }
+}
 HAL_StatusTypeDef esp_print(uint8_t* str, uint16_t len) {
-	HAL_StatusTypeDef err = HAL_UART_Transmit(&huart2, str, len, 100);
-	if (err == HAL_OK) {
-		BSP_LED_Toggle(LED_RED);
-	}
-    return err;
+    log_message_t msg;
+    if (len > LOG_MSG_MAX_LEN) len = LOG_MSG_MAX_LEN; // truncate or reject
+    memcpy(msg.data, str, len);
+    msg.len = len;
+
+    if (xQueueSend(esp_print_queue, &msg, pdMS_TO_TICKS(20)) != pdPASS) {
+        return HAL_ERROR; // queue full — dropped
+    }
+    return HAL_OK;
 }
 uint16_t crc16(uint8_t *data, uint32_t length)
 {
@@ -86,14 +105,20 @@ void send_telemetry_to_esp(void* arg) { //to esp32
 
 void init_uart_tasks() {
 	osThreadId_t send_telemetry_to_esp_handle;
-
+	osThreadId_t empty_print_queue_to_esp_handle;
 
 	static const osThreadAttr_t send_telemetry_to_esp_attributes = {
 		.name = "SendTelemetrytoESP",
 		.stack_size = 1024,
 		.priority = (osPriority_t) osPriorityNormal
 	};
+	static const osThreadAttr_t empty_print_queue_to_esp_attributes = {
+			.name = "EmptyPrintQueueToESP",
+			.stack_size = 1024,
+			.priority = (osPriority_t) osPriorityNormal
+		};
 	send_telemetry_to_esp_handle = osThreadNew(send_telemetry_to_esp, NULL, &send_telemetry_to_esp_attributes);
+	empty_print_queue_to_esp_handle = osThreadNew(empty_print_queue_to_esp, NULL, &empty_print_queue_to_esp_attributes);
 
 }
 

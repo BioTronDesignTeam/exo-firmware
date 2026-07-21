@@ -21,11 +21,13 @@
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 //linker will look for initTasks in all other .o files, so no need to #include general_thread or drivers
 void initTasks(void);
 void initDrivers(void);
+void initRTOSObjects(void);
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -147,6 +149,7 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
+  initRTOSObjects();
   initTasks();
   initDrivers();
   /* add threads, ... */

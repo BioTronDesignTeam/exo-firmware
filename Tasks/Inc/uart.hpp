@@ -8,6 +8,8 @@ extern "C" {
 #include "stm32h7xx_hal_def.h"
 
 }
+#define ESP_PRINT(s) esp_print((uint8_t*)(s), (uint16_t)strlen(s))
+#define ESP_PRINTLN(s) esp_print((uint8_t*)(s "\r\n"), (uint16_t)strlen(s "\r\n"))
 
 typedef struct __attribute__((packed)) { //UPDATE THESE IN THE ESP FOLDER AS WELL!!
     uint32_t example1;
