@@ -61,3 +61,21 @@ void motorControllerInitTask()
 {
     motorControllerTaskHandle = osThreadNew(motorControllerMainLoop, NULL, &motorController_attributes);
 }
+
+telemetry_data_t get_motor_telemetry()
+{
+	telemetry_data_t data = {0};
+
+	if (odriveS1Handle == nullptr) {
+		return data;
+	}
+
+	data.position = odriveS1Handle->encoderEstimates.positionEstimate;
+	data.velocity = odriveS1Handle->encoderEstimates.velocityEstimate;
+	data.busVoltage = odriveS1Handle->busVoltageCurrent.busVoltage;
+	data.busCurrent = odriveS1Handle->busVoltageCurrent.busCurrent;
+	data.axisState = odriveS1Handle->heartbeat.axisState;
+	data.activeErrors = odriveS1Handle->error.activeErrors;
+
+	return data;
+}

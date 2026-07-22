@@ -146,8 +146,8 @@ void read_telemetry_from_uart() {
                     break;
                 }
 
-                ESP_LOGI(TAG, "Received telemetry: example1=%lu example2=%lu example3=%lu",
-                         data.example1, data.example2, data.example3);
+                ESP_LOGI(TAG, "pos=%.3f vel=%.3f Vbus=%.2f Ibus=%.2f state=%u errors=0x%08lX",
+                        data.position, data.velocity, data.busVoltage, data.busCurrent, data.axisState, data.activeErrors);
                 esp_task_wdt_reset();
                 state = WAIT_AA;
             break;

@@ -32,11 +32,8 @@ uint16_t crc16(uint8_t *data, uint32_t length)
 }
 
 #include <stdlib.h>
-telemetry_data_t get_telemetry_data() { //placeholder, get real ones from odrive
-	srand(12932);
-	telemetry_data_t sample_data = {1, 2, 3};
-
-	return sample_data;
+telemetry_data_t get_telemetry_data() {
+	return get_motor_telemetry();
 }
 
 void write_to_esp(telemetry_data_t data) {

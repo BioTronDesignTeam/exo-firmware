@@ -1,10 +1,13 @@
 #pragma once
 #include <stdint.h>
 
-typedef struct __attribute__((packed)) { //UPDATE THESE IN THE ESP FOLDER AS WELL!!
-    uint32_t example1;
-    uint32_t example2;
-    uint32_t example3;
+typedef struct __attribute__((packed)) {
+    float position;
+    float velocity;
+    float busVoltage;
+    float busCurrent;
+    uint8_t axisState;
+    uint32_t activeErrors;
 } telemetry_data_t;
 
 typedef struct __attribute__((packed)) {
