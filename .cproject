@@ -82,6 +82,7 @@
 									<listOptionValue builtIn="false" value="../Core/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/Peripherals/IMU/BNO085"/>
 									<listOptionValue builtIn="false" value="../Drivers/Peripherals/IMU/MPU6050"/>
+									<listOptionValue builtIn="false" value="../Drivers/Peripherals/IMU/MSA311"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc"/>
 									<listOptionValue builtIn="false" value="../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy"/>
 									<listOptionValue builtIn="false" value="../Drivers/BSP/STM32H7xx_Nucleo"/>
