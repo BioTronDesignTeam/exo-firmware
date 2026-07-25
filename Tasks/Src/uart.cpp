@@ -58,17 +58,17 @@ telemetry_data_t get_telemetry_data() {
     data.example1 = 1;
     data.example2 = 2; 
     data.example3 = 3;
-    if (MPU6050Handle == nullptr) {
-        return data;
-    }
+    // if (MPU6050Handle == nullptr) {
+    //     return data;
+    // }
 
-    data.mpu6050_data.accel_x = MPU6050Handle->mpu6050_data.accel_x;
-    data.mpu6050_data.accel_y = MPU6050Handle->mpu6050_data.accel_y;
-    data.mpu6050_data.accel_z = MPU6050Handle->mpu6050_data.accel_z;
-    data.mpu6050_data.gyro_x  = MPU6050Handle->mpu6050_data.gyro_x;
-    data.mpu6050_data.gyro_y  = MPU6050Handle->mpu6050_data.gyro_y;
-    data.mpu6050_data.gyro_z  = MPU6050Handle->mpu6050_data.gyro_z;
-    data.mpu6050_data.temp = MPU6050Handle->mpu6050_data.temp;
+    // data.mpu6050_data.accel_x = MPU6050Handle->mpu6050_data.accel_x;
+    // data.mpu6050_data.accel_y = MPU6050Handle->mpu6050_data.accel_y;
+    // data.mpu6050_data.accel_z = MPU6050Handle->mpu6050_data.accel_z;
+    // data.mpu6050_data.gyro_x  = MPU6050Handle->mpu6050_data.gyro_x;
+    // data.mpu6050_data.gyro_y  = MPU6050Handle->mpu6050_data.gyro_y;
+    // data.mpu6050_data.gyro_z  = MPU6050Handle->mpu6050_data.gyro_z;
+    // data.mpu6050_data.temp = MPU6050Handle->mpu6050_data.temp;
 
     return data;
 }
