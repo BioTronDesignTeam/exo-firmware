@@ -104,6 +104,10 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+	if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDG1RST)) {
+	    // toggle an LED here, or just leave it solid on
+	}
+	__HAL_RCC_CLEAR_RESET_FLAGS();
 
   /* USER CODE END Init */
 
@@ -146,12 +150,15 @@ int main(void)
 
   /* Create the thread(s) */
   /* creation of defaultTask */
-  defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  //defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  initRTOSObjects();
-  initTasks();
-  initDrivers();
+  initRTOSObjects(); //create xQueue
+  for (volatile uint32_t i = 0; i < 4000000; i++) {
+      __NOP();
+  }
+  initTasks(); //create task to forward queue to esp through uart
+  initDrivers(); //bno085 / print call
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
@@ -560,6 +567,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE END Callback 0 */
   if (htim->Instance == TIM7)
   {
+    
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */

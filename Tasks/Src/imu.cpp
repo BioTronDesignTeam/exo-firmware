@@ -18,7 +18,7 @@ void update_mpu6050(void *arg) {
 //                //BSP_LED_Toggle(LED_RED);
 //            }
 //        }
-        osDelay(500);
+        osDelay(5000);
     }
 }
 
@@ -31,6 +31,6 @@ void init_imu_tasks() {
         .stack_size = 1024,
         .priority = (osPriority_t) osPriorityNormal
     };
-    esp_print((uint8_t*)"IMU Tasks Initialized\r\n", 23);
+    ESP_PRINTLN("initializing imu tasks");
     updateMPU6050Handle = osThreadNew(update_mpu6050, NULL, &updateMPU6050Attributes);
 }

@@ -36,7 +36,7 @@ void app_main(void)
     uart_init();
     ESP_LOGW(TAG, "UART intiialized");
     ESP_LOGW(TAG, "Starting telemetry read task");
-    xTaskCreate(&read_telemetry_from_uart, "read_telemetry", 4096, NULL, 1, NULL);
+    //xTaskCreate(&read_telemetry_from_uart, "read_telemetry", 4096, NULL, 1, NULL);
     xTaskCreate(&stm_print, "stm_print", 4096, NULL, 1, NULL);
     //ESP_LOGW(TAG, "Starting websockets task");
     //xTaskCreate(&websocket_task, "websocket_task", 4096, NULL, 1, NULL); //might want to move this into main

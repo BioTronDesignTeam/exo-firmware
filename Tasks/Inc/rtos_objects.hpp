@@ -3,7 +3,7 @@
 #include "queue.h"
 #include "semphr.h"
 
-#define LOG_MSG_MAX_LEN 64
+#define LOG_MSG_MAX_LEN 128
 
 typedef struct {
     uint8_t data[LOG_MSG_MAX_LEN];

@@ -3,21 +3,23 @@
 #include "stm32h7xx_nucleo.h"
 #include "BNO085_registers.hpp"
 #include <string.h>
+#include "uart.hpp"
 
 BNO085::BNO085(I2C_HandleTypeDef* i2cHandle):_hi2c(i2cHandle) {}
 
 bool BNO085::begin() {
 
-	HAL_I2C_Master_Receive(_hi2c, BNO085_I2C_ADDR, _rxBuffer, 64, HAL_MAX_DELAY);
+	HAL_I2C_Master_Receive(_hi2c, BNO085_I2C_ADDR, _rxBuffer, 64, 500);
 	HAL_Delay(100);
-
+	ESP_PRINT("starting the bno085 driver");
+	esp_print(_rxBuffer, 64);
 	//verify connection by checking product ID
 	uint8_t productIDPayload[] = {0xF9};
 
 	transmitPacket(SENSOR_HUB_CONTROL, productIDPayload, 1);
 
-	HAL_I2C_Master_Receive(_hi2c, BNO085_I2C_ADDR, _rxBuffer, 64, HAL_MAX_DELAY);
-
+	HAL_I2C_Master_Receive(_hi2c, BNO085_I2C_ADDR, _rxBuffer, 64, 500);
+	esp_print(_rxBuffer, 64);
 	if (_rxBuffer[4] != PRODUCT_ID_RESPONSE) {
 		return false;
 	}

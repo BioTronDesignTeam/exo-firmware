@@ -13,8 +13,9 @@ extern "C" void initTasks() {
 
 extern "C" void initDrivers() {
 	//from drivers.hpp, directly inside main.c will cause issues
+	//ESP_PRINTLN("drivers initialized");
 	initializeDrivers();
-
+	//bno085Handle->begin();
 }
 
 

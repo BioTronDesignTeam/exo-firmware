@@ -4,7 +4,6 @@
 #include "imu.hpp"
 #include "drivers.hpp"
 #include "rtos_objects.hpp"
-#include <string.h>
 //uart2: estop
 //uart4: to esp
 //uart5: to jetson or rpi

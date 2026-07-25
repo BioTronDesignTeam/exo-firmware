@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "mpu6050_data.hpp"
-
+#include <string.h>
 extern "C" {
 
 #include "main.h"
