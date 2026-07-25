@@ -83,11 +83,12 @@ void write_to_esp(telemetry_data_t data) {
 
 	HAL_StatusTypeDef err = HAL_UART_Transmit(&huart7, (uint8_t*)&packet, sizeof(telemetry_packet_t), HAL_MAX_DELAY);
     //esp_print((uint8_t*)"Sent telemetry data to ESP\r\n", 24);
+    
 	if (err == HAL_OK) {
-		BSP_LED_Toggle(LED_GREEN);
+        BSP_LED_Toggle(LED_GREEN);
 	}
 	if (err == HAL_ERROR) {
-		BSP_LED_Toggle(LED_RED);
+		// BSP_LED_Toggle(LED_RED);
 	}
 	
 	osDelay(500);

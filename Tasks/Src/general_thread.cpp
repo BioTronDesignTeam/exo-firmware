@@ -13,7 +13,14 @@ extern "C" void initTasks() {
 
 extern "C" void initDrivers() {
 	//from drivers.hpp, directly inside main.c will cause issues
-	initializeDrivers();
+	BSP_LED_On(LED_RED);
+	static const osThreadAttr_t init_driver_attributes = {
+				.name = "InitializeDriver",
+				.stack_size = 1024,
+				.priority = (osPriority_t) osPriorityNormal
+			};
+
+	osThreadNew(initializeDrivers,NULL,&init_driver_attributes);
 
 }
 

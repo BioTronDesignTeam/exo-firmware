@@ -10,4 +10,4 @@ extern ODRIVES1 *odriveS1Handle;
 extern MSA311 *MSA311Handle;
 extern BNO085 *bno085Handle;
 
-void initializeDrivers();
+void initializeDrivers(void* arg);

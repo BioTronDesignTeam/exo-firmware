@@ -7,6 +7,8 @@ static constexpr uint8_t MSA311_PARTID = 0x01;
 static constexpr uint8_t MSA311_PARTID_VAL = 0x13;
 
 static constexpr uint8_t MSA311_SOFT_RESET = 0x00;
+// Soft reset is triggered by bits 2 and 5 of the soft reset register
+static constexpr uint8_t MSA311_SOFT_RESET_VAL = 0x24;
 static constexpr uint8_t MSA311_RANGE = 0x0F;
 static constexpr uint8_t MSA311_ODR = 0x10;
 static constexpr uint8_t MSA311_POWER_MODE = 0x11;

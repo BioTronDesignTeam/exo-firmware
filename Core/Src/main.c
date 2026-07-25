@@ -103,8 +103,8 @@ int main(void)
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-  /* USER CODE BEGIN Init */
-
+    /* USER CODE BEGIN Init */
+    
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -120,14 +120,17 @@ int main(void)
   MX_I2C2_Init();
   MX_I2C1_Init();
   MX_UART7_Init();
+
+ 
   MX_USART2_UART_Init();
-  /* USER CODE BEGIN 2 */
-
+   HAL_UART_Transmit(&huart2, (uint8_t*)"test\r\n", 6, 100);
+   /* USER CODE BEGIN 2 */
+  
   /* USER CODE END 2 */
-
+  
   /* Init scheduler */
   osKernelInitialize();
-
+  
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
@@ -143,7 +146,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
-
+  
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);

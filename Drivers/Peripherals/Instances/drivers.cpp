@@ -1,4 +1,5 @@
 #include "drivers.hpp"
+#include "cmsis_os2.h"
 // Credit: WARG efs-zeropilot for code structure!
 #include <new>
 // All the hardware handles
@@ -22,9 +23,13 @@ MSA311 *MSA311Handle = nullptr;
 BNO085 *bno085Handle = nullptr;
 
 // Driver Initialization
-void initializeDrivers() {
-	odriveS1Handle = new (&odrives1Storage) ODRIVES1(&hfdcan1);
-	// MPU6050Handle = new (&mpu6050Storage) MPU6050(&hi2c1);
-	MSA311Handle = new (&msa311Storage) MSA311(&hi2c1);
-	bno085Handle = new (&bno085Storage) BNO085(&hi2c1);
+void initializeDrivers(void* arg) {
+	for ( ;; ) {
+		odriveS1Handle = new (&odrives1Storage) ODRIVES1(&hfdcan1);
+		// MPU6050Handle = new (&mpu6050Storage) MPU6050(&hi2c1);
+		MSA311Handle = new (&msa311Storage) MSA311(&hi2c1);
+		bno085Handle = new (&bno085Storage) BNO085(&hi2c1);
+		osThreadExit();
+		//osDelay(5000);
+	}
 }
