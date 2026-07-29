@@ -57,17 +57,17 @@ telemetry_data_t get_telemetry_data() {
     data.example1 = 1;
     data.example2 = 2; 
     data.example3 = 3;
-    if (MPU6050Handle == nullptr) {
-        return data;
-    }
+    // if (MPU6050Handle == nullptr) {
+    //     return data;
+    // }
 
-    data.mpu6050_data.accel_x = MPU6050Handle->mpu6050_data.accel_x;
-    data.mpu6050_data.accel_y = MPU6050Handle->mpu6050_data.accel_y;
-    data.mpu6050_data.accel_z = MPU6050Handle->mpu6050_data.accel_z;
-    data.mpu6050_data.gyro_x  = MPU6050Handle->mpu6050_data.gyro_x;
-    data.mpu6050_data.gyro_y  = MPU6050Handle->mpu6050_data.gyro_y;
-    data.mpu6050_data.gyro_z  = MPU6050Handle->mpu6050_data.gyro_z;
-    data.mpu6050_data.temp = MPU6050Handle->mpu6050_data.temp;
+    // data.mpu6050_data.accel_x = MPU6050Handle->mpu6050_data.accel_x;
+    // data.mpu6050_data.accel_y = MPU6050Handle->mpu6050_data.accel_y;
+    // data.mpu6050_data.accel_z = MPU6050Handle->mpu6050_data.accel_z;
+    // data.mpu6050_data.gyro_x  = MPU6050Handle->mpu6050_data.gyro_x;
+    // data.mpu6050_data.gyro_y  = MPU6050Handle->mpu6050_data.gyro_y;
+    // data.mpu6050_data.gyro_z  = MPU6050Handle->mpu6050_data.gyro_z;
+    // data.mpu6050_data.temp = MPU6050Handle->mpu6050_data.temp;
 
     return data;
 }
@@ -82,11 +82,12 @@ void write_to_esp(telemetry_data_t data) {
 
 	HAL_StatusTypeDef err = HAL_UART_Transmit(&huart7, (uint8_t*)&packet, sizeof(telemetry_packet_t), HAL_MAX_DELAY);
     //esp_print((uint8_t*)"Sent telemetry data to ESP\r\n", 24);
+    
 	if (err == HAL_OK) {
-		BSP_LED_Toggle(LED_GREEN);
+        BSP_LED_Toggle(LED_GREEN);
 	}
 	if (err == HAL_ERROR) {
-		BSP_LED_Toggle(LED_RED);
+		// BSP_LED_Toggle(LED_RED);
 	}
 	
 	osDelay(500);
