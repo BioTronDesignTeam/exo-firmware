@@ -41,14 +41,14 @@ void send_telemetry_to_host(void*)
 
 } // namespace
 
-HAL_StatusTypeDef esp_print_byte(uint8_t byte)
+HAL_StatusTypeDef serial_print_byte(uint8_t byte)
 {
     uint8_t buffer[6];
     uint8_to_hex(byte, buffer, sizeof(buffer));
-    return esp_print(buffer, sizeof(buffer));
+    return serial_print(buffer, sizeof(buffer));
 }
 
-HAL_StatusTypeDef esp_print(uint8_t* str, uint16_t len)
+HAL_StatusTypeDef serial_print(uint8_t* str, uint16_t len)
 {
     if (str == nullptr) {
         return HAL_ERROR;

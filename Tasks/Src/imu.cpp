@@ -12,8 +12,7 @@ extern "C" {
 void update_msa311(void *arg) {
     char buf[64];
     for ( ;; ) {
-        //esp_print((uint8_t*)"Updating MPU6050 lol wrong imu\r\n", 19);
-        ESP_PRINT("Updating MSA311\r\n");
+        SERIAL_PRINT("Updating MSA311\r\n");
         BSP_LED_Toggle(LED_YELLOW);
 
         if (MSA311Handle != nullptr) {
@@ -22,9 +21,9 @@ void update_msa311(void *arg) {
                          MSA311Handle->msa311_data.x,
                          MSA311Handle->msa311_data.y,
                          MSA311Handle->msa311_data.z);
-                ESP_PRINT(buf);
+                SERIAL_PRINT(buf);
             } else {
-                ESP_PRINT("MSA read failed\r\n");
+                SERIAL_PRINT("MSA read failed\r\n");
             }
         }
         osDelay(2000);
@@ -40,6 +39,5 @@ void init_imu_tasks() {
         .stack_size = 1024,
         .priority = (osPriority_t) osPriorityNormal
     };
-    //esp_print((uint8_t*)"IMU Tasks Initialized\r\n", 23);
     updateMSA311Handle = osThreadNew(update_msa311, NULL, &updateMSA311Attributes);
 }
