@@ -1,7 +1,7 @@
-#include "BNO085.hpp"
+#include "bno085.hpp"
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_nucleo.h"
-#include "BNO085_registers.hpp"
+#include "bno085_registers.hpp"
 #include <string.h>
 #include "uart.hpp"
 

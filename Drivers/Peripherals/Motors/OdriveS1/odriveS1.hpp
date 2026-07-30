@@ -9,9 +9,9 @@
 #ifndef INC_ODRIVES1_CAN_HPP_
 #define INC_ODRIVES1_CAN_HPP_
 
-#include "stm32H7xx_hal.h"
-#include "stm32H7xx_hal_fdcan.h"
-#include "CAN_simple.hpp"
+#include "stm32h7xx_hal.h"
+#include "stm32h7xx_hal_fdcan.h"
+#include "can_simple.hpp"
 
 class ODRIVES1 {
 private:

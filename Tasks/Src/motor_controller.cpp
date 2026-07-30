@@ -1,5 +1,5 @@
 #include "motor_controller.hpp"
-#include "stm32H7xx_hal_fdcan.h"
+#include "stm32h7xx_hal_fdcan.h"
 #include <stdio.h>
 
 extern FDCAN_HandleTypeDef hfdcan1;

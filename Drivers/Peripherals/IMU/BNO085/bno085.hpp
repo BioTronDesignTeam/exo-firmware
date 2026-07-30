@@ -1,7 +1,7 @@
 #pragma once
 
-#include "stm32H7xx_hal.h"
-#include "BNO085_registers.hpp"
+#include "stm32h7xx_hal.h"
+#include "bno085_registers.hpp"
 
 class BNO085 {
 private:

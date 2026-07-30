@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stm32H7xx_hal.h"
+#include "stm32h7xx_hal.h"
 #include "msa311_registers.hpp"
 
 class MSA311 {
