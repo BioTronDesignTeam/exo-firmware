@@ -610,6 +610,8 @@ void assert_failed(uint8_t *file, uint32_t line)
 #endif /* USE_FULL_ASSERT */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	if (GPIO_Pin == GPIO_PIN_6) {
-
+		if (bno085_interrupt_semaphore_handle != NULL) {
+			osSemaphoreRelease(bno085_interrupt_semaphore_handle);
+		}
 	}
 }

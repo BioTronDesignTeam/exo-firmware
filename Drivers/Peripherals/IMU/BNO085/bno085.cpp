@@ -72,7 +72,7 @@ bool BNO085::receiveReports() {
 	memset(_rxBuffer, 0, sizeof(_rxBuffer));
 
 	//HAL receive
-	if (HAL_I2C_Master_Receive(_hi2c, BNO085_I2C_ADDR, _rxBuffer, 64, HAL_MAX_DELAY) != HAL_OK) {
+	if (HAL_I2C_Master_Receive(_hi2c, BNO085_I2C_ADDR, _rxBuffer, 64, 50) != HAL_OK) {
 		return false;
 	}
 
