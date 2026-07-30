@@ -5,18 +5,40 @@
 
 class BNO085 {
 private:
-    I2C_HandleTypeDef* _hi2c; //pointer to manager of this i2c port
-    uint8_t _rxBuffer[64] = {0}; //receive buffer
-    uint8_t _txBuffer[64] = {0}; //transmit buffer
+    static constexpr uint16_t SHTP_HEADER_LENGTH = 4;
+    static constexpr uint16_t MAX_PACKET_LENGTH = 64;
+    static constexpr uint8_t CHANNEL_COUNT = 6;
 
-    void transmitPacket(uint8_t channel, uint8_t* payload, uint8_t payloadLength);
-    void enableReport(uint8_t reportID, uint32_t intervalUs);
-    void parseRotVector();
+    I2C_HandleTypeDef* _hi2c;
+    uint16_t _i2cAddress = BNO085_I2C_ADDR;
+    uint8_t _rxBuffer[MAX_PACKET_LENGTH] = {0};
+    uint8_t _txBuffer[MAX_PACKET_LENGTH] = {0};
+    uint8_t _txSequence[CHANNEL_COUNT] = {0};
+    uint16_t _rxLength = 0;
+    uint8_t _rxChannel = 0;
+    bool _rxContinuation = false;
+    bool _discardingContinuation = false;
+    bool _productIdReceived = false;
+    bool _initialized = false;
+
+    bool transmitPacket(uint8_t channel, const uint8_t* payload, uint16_t payloadLength);
+    bool receivePacket(uint32_t timeoutMs);
+    bool dispatchPacket();
+    bool enableReport(uint8_t reportID, uint32_t intervalUs);
+    void parseRotVector(uint16_t reportOffset);
 
 public:
     bno085_accel_t acceleration = {0};
     bno085_rot_vector_t rotationVector = {0};
-    BNO085(I2C_HandleTypeDef* i2cHandle); //constructor
-    bool begin(); // verifies product ID and enables reports
-    bool receiveReports(); // master receives and routes to parsing functions
+    uint32_t packetsReceived = 0;
+    uint32_t i2cErrors = 0;
+    uint32_t malformedPackets = 0;
+    uint16_t lastPacketLength = 0;
+    uint8_t lastPacketChannel = 0;
+    uint8_t lastPayloadPrefix[4] = {0};
+
+    explicit BNO085(I2C_HandleTypeDef* i2cHandle);
+    bool begin();
+    bool receiveReports();
+    bool isInitialized() const;
 };
