@@ -39,14 +39,6 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-#define LOG_MSG_MAX_LEN 128
-
-typedef struct {
-    uint8_t data[LOG_MSG_MAX_LEN];
-    uint16_t len;
-} log_message_t;
-
-extern osMessageQueueId_t esp_print_queue;
 extern osSemaphoreId_t bno085_interrupt_semaphore_handle;
 /* USER CODE END ET */
 

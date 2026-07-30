@@ -62,7 +62,6 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
-osMessageQueueId_t esp_print_queue;
 osSemaphoreId_t bno085_interrupt_semaphore_handle;
 /* USER CODE END PV */
 
@@ -131,7 +130,6 @@ int main(void)
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-  esp_print_queue = osMessageQueueNew(10, sizeof(log_message_t), NULL);
   bno085_interrupt_semaphore_handle = osSemaphoreNew(1, 0, NULL);
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */

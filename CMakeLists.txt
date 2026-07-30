@@ -86,6 +86,7 @@ set(CXX_SOURCES
     Tasks/Src/general_thread.cpp
     Tasks/Src/imu.cpp
     Tasks/Src/motor_controller.cpp
+    Tasks/Src/serial_protocol.cpp
     Tasks/Src/uart.cpp
 
     Drivers/Peripherals/IMU/BNO085/bno085.cpp
