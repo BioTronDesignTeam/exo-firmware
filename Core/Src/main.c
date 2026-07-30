@@ -19,14 +19,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "FreeRTOS.h"
-#include "cmsis_os2.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 //linker will look for initTasks in all other .o files, so no need to #include general_thread or drivers
 void initTasks(void);
 void initDrivers(void);
-void initRTOSObjects(void);
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,7 +62,8 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
-
+osMessageQueueId_t esp_print_queue;
+osSemaphoreId_t bno085_interrupt_semaphore_handle;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -132,6 +131,8 @@ int main(void)
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
+  esp_print_queue = osMessageQueueNew(10, sizeof(log_message_t), NULL);
+  bno085_interrupt_semaphore_handle = osSemaphoreNew(1, 0, NULL);
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
@@ -148,10 +149,7 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  initRTOSObjects(); //create xQueue
-  for (volatile uint32_t i = 0; i < 4000000; i++) {
-      __NOP();
-  }
+
   initTasks(); //create task to forward queue to esp through uart
   initDrivers(); //bno085 / print call
   /* add threads, ... */
@@ -610,3 +608,8 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	if (GPIO_Pin == GPIO_PIN_6) {
+
+	}
+}

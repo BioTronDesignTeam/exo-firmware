@@ -3,7 +3,6 @@
 #include <cmsis_os2.h>
 #include "imu.hpp"
 #include "drivers.hpp"
-#include "rtos_objects.hpp"
 //uart2: estop
 //uart4: to esp
 //uart5: to jetson or rpi
@@ -11,7 +10,7 @@
 
 extern UART_HandleTypeDef huart7;
 extern UART_HandleTypeDef huart2;
-extern QueueHandle_t esp_print_queue;
+extern osMessageQueueId_t esp_print_queue;
 
 void uint8_to_hex(uint8_t byte, uint8_t* output, uint16_t length) {
     static const char hex_digits[] = "0123456789ABCDEF";
@@ -37,7 +36,7 @@ void empty_print_queue_to_esp(void* arg) {
 
     for (;;) {
         // Block indefinitely until a message arrives
-        if (xQueueReceive(esp_print_queue, &msg, portMAX_DELAY) == pdPASS) {
+        if (osMessageQueueGet(esp_print_queue, &msg, NULL, osWaitForever) == osOK) {
             HAL_UART_Transmit(&huart2, msg.data, msg.len, 100);
             BSP_LED_Toggle(LED_RED);
         }
@@ -54,7 +53,7 @@ HAL_StatusTypeDef esp_print(uint8_t* str, uint16_t len) {
     memcpy(msg.data, str, len);
     msg.len = len;
 
-    if (xQueueSend(esp_print_queue, &msg, pdMS_TO_TICKS(20)) != pdPASS) {
+    if (osMessageQueuePut(esp_print_queue, &msg, 0U, 100U) != osOK) {
         return HAL_ERROR; // queue full — dropped
     }
     return HAL_OK;
