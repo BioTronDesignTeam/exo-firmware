@@ -28,7 +28,7 @@ void uint8_to_hex(uint8_t byte, uint8_t* output, uint16_t length) {
     output[5] = '\n';
 
     if (length >= 7) {
-        output[4] = '\0'; // optional null terminator, if you want a C string
+        output[6] = '\0'; // optional null terminator, if you want a C string
     }
 }
 void empty_print_queue_to_esp(void* arg) {
@@ -111,8 +111,6 @@ void write_to_esp(telemetry_data_t data) {
 	if (err == HAL_ERROR) {
 		// BSP_LED_Toggle(LED_RED);
 	}
-	
-	osDelay(500);
 }
 
 void send_telemetry_to_esp(void* arg) { //to esp32
