@@ -13,7 +13,25 @@ extern UART_HandleTypeDef huart7;
 extern UART_HandleTypeDef huart2;
 extern QueueHandle_t esp_print_queue;
 
+void uint8_to_hex(uint8_t byte, uint8_t* output, uint16_t length) {
+    static const char hex_digits[] = "0123456789ABCDEF";
 
+    if (length < 6) {
+        // not enough room for "0x" + 2 hex digits (+ maybe a null terminator)
+        return;
+    }
+
+    output[0] = '0';
+    output[1] = 'x';
+    output[2] = hex_digits[(byte >> 4) & 0x0F];
+    output[3] = hex_digits[byte & 0x0F];
+    output[4] = '\r';
+    output[5] = '\n';
+
+    if (length >= 7) {
+        output[4] = '\0'; // optional null terminator, if you want a C string
+    }
+}
 void empty_print_queue_to_esp(void* arg) {
     log_message_t msg;
 
@@ -24,6 +42,11 @@ void empty_print_queue_to_esp(void* arg) {
             BSP_LED_Toggle(LED_RED);
         }
     }
+}
+HAL_StatusTypeDef esp_print_byte(uint8_t byte) {
+	uint8_t buf[6];
+	uint8_to_hex(byte, buf, 6);
+	return esp_print(buf, 6);
 }
 HAL_StatusTypeDef esp_print(uint8_t* str, uint16_t len) {
     log_message_t msg;

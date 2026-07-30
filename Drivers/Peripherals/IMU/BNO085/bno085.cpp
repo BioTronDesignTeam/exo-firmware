@@ -5,7 +5,9 @@
 #include <string.h>
 #include "uart.hpp"
 
-BNO085::BNO085(I2C_HandleTypeDef* i2cHandle):_hi2c(i2cHandle) {}
+BNO085::BNO085(I2C_HandleTypeDef* i2cHandle):_hi2c(i2cHandle) {
+	BNO085::begin();
+}
 
 bool BNO085::begin() {
 
@@ -19,6 +21,7 @@ bool BNO085::begin() {
 	transmitPacket(SENSOR_HUB_CONTROL, productIDPayload, 1);
 
 	HAL_I2C_Master_Receive(_hi2c, BNO085_I2C_ADDR, _rxBuffer, 64, 500);
+	ESP_PRINT("finished starting the bno085 driver");
 	esp_print(_rxBuffer, 64);
 	if (_rxBuffer[4] != PRODUCT_ID_RESPONSE) {
 		return false;

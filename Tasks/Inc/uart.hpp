@@ -24,6 +24,7 @@ typedef struct __attribute__((packed)) {
     uint16_t crc; //crc16 of the data
 } telemetry_packet_t;
 
+HAL_StatusTypeDef esp_print_byte(uint8_t byte);
 HAL_StatusTypeDef esp_print(uint8_t* str, uint16_t len);
 void spamUART(void* arg);
 void init_uart_tasks();

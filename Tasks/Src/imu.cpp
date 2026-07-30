@@ -13,7 +13,7 @@ void update_msa311(void *arg) {
     char buf[64];
     for ( ;; ) {
         //esp_print((uint8_t*)"Updating MPU6050 lol wrong imu\r\n", 19);
-        ESP_PRINT("Updating MPU6050 lol wrong imu\r\n");
+        ESP_PRINT("Updating MSA311\r\n");
         BSP_LED_Toggle(LED_YELLOW);
 
         if (MSA311Handle != nullptr) {
@@ -27,7 +27,7 @@ void update_msa311(void *arg) {
                 ESP_PRINT("MSA read failed\r\n");
             }
         }
-        osDelay(500);
+        osDelay(2000);
     }
 }
 

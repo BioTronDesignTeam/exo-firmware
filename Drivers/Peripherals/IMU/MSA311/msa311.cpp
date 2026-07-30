@@ -11,8 +11,7 @@ MSA311::MSA311(I2C_HandleTypeDef* i2cHandle) : _i2c(i2cHandle) {
     HAL_Delay(10); 
     uint8_t partid = 0;
     HAL_I2C_Mem_Read(_i2c, MSA311_I2C_ADDR, MSA311_PARTID, I2C_MEMADD_SIZE_8BIT, &partid, 1, 100);
-    uint8_t test = partid + 0x41;
-    ESP_PRINT((char*)&test);
+    esp_print_byte(partid);
     //ESP_PRINT("ghjgjyfjthtrhtrhtrht\r\n");
     // Turn on yellow LED if communication fails
     if (partid != MSA311_PARTID_VAL) {

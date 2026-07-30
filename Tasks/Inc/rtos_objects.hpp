@@ -2,6 +2,7 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 #include "semphr.h"
+#include "main.h"
 
 #define LOG_MSG_MAX_LEN 128
 
@@ -11,6 +12,7 @@ typedef struct {
 } log_message_t;
 
 extern QueueHandle_t esp_print_queue;
+extern osSemaphoreId_t bno085_interrupt_semaphore_handle;
 
 #ifdef __cplusplus
 extern "C" {
