@@ -18,9 +18,6 @@ private:
 	FDCAN_HandleTypeDef* _can;
 	FDCAN_FilterTypeDef odriveCanFilter;
 
-	// TODO: Replace test bytes
-	uint8_t odriveTxBuffer[FDCAN_DLC_BYTES_8] =  {0};
-
 public:
 	// Internal States
 	uint8_t odriveRxBuffer[FDCAN_DLC_BYTES_8] = {0};
@@ -41,7 +38,7 @@ public:
 	ODRIVES1 (FDCAN_HandleTypeDef* fdcanhandle);
 
 	// CAN send function
-	HAL_StatusTypeDef sendMsgCAN(uint32_t identifier, bool isRemote);
+	HAL_StatusTypeDef sendMsgCAN(uint32_t identifier, bool isRemote, const uint8_t* txBuffer = nullptr);
 
 	// Getters
 	HAL_StatusTypeDef getVersion();

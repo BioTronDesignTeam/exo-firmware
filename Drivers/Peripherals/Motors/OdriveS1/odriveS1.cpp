@@ -41,7 +41,7 @@ ODRIVES1::ODRIVES1 (FDCAN_HandleTypeDef* fdcanhandle) : _can(fdcanhandle) {
 	}
 }
 
-HAL_StatusTypeDef ODRIVES1::sendMsgCAN(uint32_t identifier, bool isRemote) {
+HAL_StatusTypeDef ODRIVES1::sendMsgCAN(uint32_t identifier, bool isRemote, const uint8_t* txBuffer) {
 	FDCAN_TxHeaderTypeDef txHeader;
 	txHeader.Identifier = identifier;
 	txHeader.IdType = FDCAN_STANDARD_ID;
@@ -57,8 +57,11 @@ HAL_StatusTypeDef ODRIVES1::sendMsgCAN(uint32_t identifier, bool isRemote) {
 	txHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
 	txHeader.MessageMarker = 0x00; // Ignore because FDCAN_NO_TX_EVENTS
 
+	uint8_t dummyBuffer[8] = {0};
+	const uint8_t* dataPtr = txBuffer ? txBuffer : dummyBuffer;
+
 	// Add bytes to queue to be sent
-	if (HAL_FDCAN_AddMessageToTxFifoQ(this->_can, &txHeader, this->odriveTxBuffer) != HAL_OK) {
+	if (HAL_FDCAN_AddMessageToTxFifoQ(this->_can, &txHeader, const_cast<uint8_t*>(dataPtr)) != HAL_OK) {
 		return HAL_ERROR;
 	}
 
@@ -113,18 +116,23 @@ HAL_StatusTypeDef ODRIVES1::responseCallback(uint32_t identifier) {
 			this->heartbeat.axisState = this->odriveRxBuffer[4];
 			this->heartbeat.procedureResult = this->odriveRxBuffer[5];
 			this->heartbeat.trajectoryDoneFlag = this->odriveRxBuffer[6];
+			break;
 		case CMD_ID_GET_ERROR:
 			memcpy(&this->error.activeErrors, this->odriveRxBuffer, 4);
 			memcpy(&this->error.disarmReason, &this->odriveRxBuffer[4], 4);
+			break;
 		case CMD_ID_GET_ENCODE_ESTIMATES:
 			memcpy(&this->encoderEstimates.positionEstimate, this->odriveRxBuffer, 4);
 			memcpy(&this->encoderEstimates.velocityEstimate, &this->odriveRxBuffer[4], 4);
+			break;
 		case CMD_ID_GET_BUS_VOLTAGE_CURRENT:
 			memcpy(&this->busVoltageCurrent.busVoltage, this->odriveRxBuffer, 4);
 			memcpy(&this->busVoltageCurrent.busCurrent, &this->odriveRxBuffer[4], 4);
+			break;
 		case CMD_ID_GET_TORQUES:
 			memcpy(&this->torque.torqueTarget, this->odriveRxBuffer, 4);
 			memcpy(&this->torque.torqueEstimate, &this->odriveRxBuffer[4], 4);
+			break;
 		case CMD_ID_GET_VERSION:
 			this->version.protocolVersion = this->odriveRxBuffer[0];
 			this->version.hwVersionMajor = this->odriveRxBuffer[1];
@@ -134,128 +142,148 @@ HAL_StatusTypeDef ODRIVES1::responseCallback(uint32_t identifier) {
 			this->version.fwVersionMinor = this->odriveRxBuffer[5];
 			this->version.fwVersionRevision = this->odriveRxBuffer[6];
 			this->version.fwVersionUnreleased = this->odriveRxBuffer[7];
+			break;
 		case CMD_ID_MODIFY_PARAMETERS_RESPONSE:
 			// TODO
+			break;
 		case CMD_ID_GET_ADDRESS:
 			this->address.nodeID = this->odriveRxBuffer[0];
 			memcpy((uint8_t *)&this->address.serialNumber + 2, &this->odriveRxBuffer[1], 6);
 			this->address.connectionID = this->odriveRxBuffer[7];
+			break;
 		case CMD_ID_GET_IQ:
 			memcpy(&this->iq.iqSetpoint, this->odriveRxBuffer, 4);
 			memcpy(&this->iq.iqMeasured, &this->odriveRxBuffer[4], 4);
+			break;
 		case CMD_ID_GET_TEMPERATURE:
 			memcpy(&this->temperature.FETTemperature, this->odriveRxBuffer, 4);
-			memcpy(&this->temperature.FETTemperature, &this->odriveRxBuffer[4], 4);
+			memcpy(&this->temperature.motorTemperature, &this->odriveRxBuffer[4], 4);
+			break;
 		case CMD_ID_GET_POWERS:
 			memcpy(&this->power.electricalPower, this->odriveRxBuffer, 4);
 			memcpy(&this->power.mechanicalPower, &this->odriveRxBuffer[4], 4);
+			break;
 	}
 
 	return HAL_OK;
 }
 
 HAL_StatusTypeDef ODRIVES1::setAxisState(uint32_t requestedState) {
-	std::memcpy(&this->odriveTxBuffer[0], &requestedState, 4);
+	uint8_t txBuf[8] = {0};
+	std::memcpy(&txBuf[0], &requestedState, 4);
 
-
-	return this->sendMsgCAN(CMD_ID_SET_AXIS_STATE, false);
+	return this->sendMsgCAN(CMD_ID_SET_AXIS_STATE, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::setControllerMode(uint32_t controlMode, uint32_t inputMode) {
-	std::memcpy(this->odriveTxBuffer, &controlMode, 4);
-	std::memcpy(&this->odriveTxBuffer[4], &inputMode, 4);
+	uint8_t txBuf[8] = {0};
+	std::memcpy(txBuf, &controlMode, 4);
+	std::memcpy(&txBuf[4], &inputMode, 4);
 
-	return this->sendMsgCAN(CMD_ID_SET_CONTROLLER_MODE, false);
+	return this->sendMsgCAN(CMD_ID_SET_CONTROLLER_MODE, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::setInputPosition(float inputPos, int16_t inputVel, int16_t inputTorque) {
-	std::memcpy(this->odriveTxBuffer, &inputPos, 4);
-	std::memcpy(&this->odriveTxBuffer[4], &inputVel, 2);
-	std::memcpy(&this->odriveTxBuffer[6], &inputTorque, 2);
+	uint8_t txBuf[8] = {0};
+	std::memcpy(txBuf, &inputPos, 4);
+	std::memcpy(&txBuf[4], &inputVel, 2);
+	std::memcpy(&txBuf[6], &inputTorque, 2);
 
-	return this->sendMsgCAN(CMD_ID_SET_INPUT_POSITION, false);
+	return this->sendMsgCAN(CMD_ID_SET_INPUT_POSITION, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::setInputVelocity(float inputVel, float inputTorque) {
-	std::memcpy(this->odriveTxBuffer, &inputVel, 4);
-	std::memcpy(&this->odriveTxBuffer[4], &inputTorque, 4);
+	uint8_t txBuf[8] = {0};
+	std::memcpy(txBuf, &inputVel, 4);
+	std::memcpy(&txBuf[4], &inputTorque, 4);
 
-	return this->sendMsgCAN(CMD_ID_SET_INPUT_VELOCITY, false);
+	return this->sendMsgCAN(CMD_ID_SET_INPUT_VELOCITY, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::setInputTorque(float inputTorque) {
-	std::memcpy(this->odriveTxBuffer, &inputTorque, 4);
+	uint8_t txBuf[8] = {0};
+	std::memcpy(txBuf, &inputTorque, 4);
 
-	return this->sendMsgCAN(CMD_ID_SET_INPUT_TORQUE, false);
+	return this->sendMsgCAN(CMD_ID_SET_INPUT_TORQUE, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::setLimits(float velLimit, float currentSoftMax) {
-	std::memcpy(this->odriveTxBuffer, &velLimit, 4);
-	std::memcpy(&this->odriveTxBuffer[4], &currentSoftMax, 4);
+	uint8_t txBuf[8] = {0};
+	std::memcpy(txBuf, &velLimit, 4);
+	std::memcpy(&txBuf[4], &currentSoftMax, 4);
 
-	return this->sendMsgCAN(CMD_ID_SET_LIMITS, false);
+	return this->sendMsgCAN(CMD_ID_SET_LIMITS, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::setTrajectoryVelocityLimit(float velocityLimit) {
-	std::memcpy(this->odriveTxBuffer, &velocityLimit, 4);
+	uint8_t txBuf[8] = {0};
+	std::memcpy(txBuf, &velocityLimit, 4);
 
-	return this->sendMsgCAN(CMD_ID_SET_TRAJECTORY_VELOCITY_LIMIT, false);
+	return this->sendMsgCAN(CMD_ID_SET_TRAJECTORY_VELOCITY_LIMIT, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::setTrajectoryAccelerationLimit(float accelerationLimit, float decelerationLimit) {
-	std::memcpy(this->odriveTxBuffer, &accelerationLimit, 4);
-	std::memcpy(&this->odriveTxBuffer[4], &decelerationLimit, 4);
+	uint8_t txBuf[8] = {0};
+	std::memcpy(txBuf, &accelerationLimit, 4);
+	std::memcpy(&txBuf[4], &decelerationLimit, 4);
 
-	return this->sendMsgCAN(CMD_ID_SET_TRAJECTORY_ACCELERATION_LIMIT, false);
+	return this->sendMsgCAN(CMD_ID_SET_TRAJECTORY_ACCELERATION_LIMIT, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::setTrajectoryInertia(float inertia) {
-	std::memcpy(this->odriveTxBuffer, &inertia, 4);
+	uint8_t txBuf[8] = {0};
+	std::memcpy(txBuf, &inertia, 4);
 
-	return this->sendMsgCAN(CMD_ID_SET_TRAJECTORY_INERTIA, false);
+	return this->sendMsgCAN(CMD_ID_SET_TRAJECTORY_INERTIA, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::setAbsolutePosition(float postionEstimate) {
-	std::memcpy(this->odriveTxBuffer, &postionEstimate, 4);
+	uint8_t txBuf[8] = {0};
+	std::memcpy(txBuf, &postionEstimate, 4);
 
-	return this->sendMsgCAN(CMD_ID_SET_ABSOLUTE_POSITION, false);
+	return this->sendMsgCAN(CMD_ID_SET_ABSOLUTE_POSITION, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::setPositionGain(float postionGain) {
-	std::memcpy(this->odriveTxBuffer, &postionGain, 4);
+	uint8_t txBuf[8] = {0};
+	std::memcpy(txBuf, &postionGain, 4);
 
-	return this->sendMsgCAN(CMD_ID_SET_POSITION_GAIN, false);
+	return this->sendMsgCAN(CMD_ID_SET_POSITION_GAIN, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::setVelocityGain(float velocityGain, float velocityIntegratorGain) {
-	std::memcpy(this->odriveTxBuffer, &velocityGain, 4);
-	std::memcpy(&this->odriveTxBuffer[4], &velocityIntegratorGain, 4);
+	uint8_t txBuf[8] = {0};
+	std::memcpy(txBuf, &velocityGain, 4);
+	std::memcpy(&txBuf[4], &velocityIntegratorGain, 4);
 
-	return this->sendMsgCAN(CMD_ID_SET_VELOCITY_GAINS, false);
+	return this->sendMsgCAN(CMD_ID_SET_VELOCITY_GAINS, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::modifyParameter(OpCode opCode, uint16_t endpointID, uint32_t value) {
-	this->odriveTxBuffer[0] = static_cast<uint8_t>(opCode);
-	std::memcpy(&this->odriveTxBuffer[1], &endpointID, 2);
-	std::memcpy(&this->odriveTxBuffer[3], &value, 4);
+	uint8_t txBuf[8] = {0};
+	txBuf[0] = static_cast<uint8_t>(opCode);
+	std::memcpy(&txBuf[1], &endpointID, 2);
+	std::memcpy(&txBuf[3], &value, 4);
 
-	return this->sendMsgCAN(CMD_ID_MODIFY_PARAMETERS, false);
+	return this->sendMsgCAN(CMD_ID_MODIFY_PARAMETERS, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::clearErrors(uint8_t identify) {
-	this->odriveTxBuffer[0] = identify;
+	uint8_t txBuf[8] = {0};
+	txBuf[0] = identify;
 
-	return this->sendMsgCAN(CMD_ID_CLEAR_ERRORS, false);
+	return this->sendMsgCAN(CMD_ID_CLEAR_ERRORS, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::rebootOdrive(ResetMode resetMode) {
-	this->odriveTxBuffer[0] = static_cast<uint8_t>(resetMode);
+	uint8_t txBuf[8] = {0};
+	txBuf[0] = static_cast<uint8_t>(resetMode);
 
-	return this->sendMsgCAN(CMD_ID_REBOOT, false);
+	return this->sendMsgCAN(CMD_ID_REBOOT, false, txBuf);
 }
 
 HAL_StatusTypeDef ODRIVES1::enterDFUMode() {
-	std::memset(this->odriveTxBuffer, 0, 8);
+	uint8_t txBuf[8] = {0};
 
-	return this->sendMsgCAN(CMD_ID_ENTER_DFU_MODE, false);
+	return this->sendMsgCAN(CMD_ID_ENTER_DFU_MODE, false, txBuf);
 }
