@@ -92,7 +92,21 @@ def open_serial(port: str) -> tuple[int, list]:
 
 
 def print_packet(packet_type: int, payload: bytes) -> None:
-    if packet_type == TYPE_TELEMETRY and len(payload) == 16:
+    if packet_type == TYPE_TELEMETRY and len(payload) == 38:
+        timestamp, accel_x, accel_y, accel_z, quat_i, quat_j, quat_k, quat_real, accuracy, status, valid = (
+            struct.unpack("<IffffffffBB", payload)
+        )
+        bno_text = (
+            f" bno_q=({quat_i:+.4f},{quat_j:+.4f},{quat_k:+.4f},{quat_real:+.4f})"
+            f" status={status} acc={accuracy:.3f}"
+            if valid
+            else " bno=unavailable"
+        )
+        print(
+            f"telemetry t={timestamp:>10} ms accel=({accel_x:+.3f}, {accel_y:+.3f}, {accel_z:+.3f}) g"
+            f"{bno_text}"
+        )
+    elif packet_type == TYPE_TELEMETRY and len(payload) == 16:
         timestamp, x, y, z = struct.unpack("<Ifff", payload)
         print(f"telemetry t={timestamp:>10} ms accel=({x:+.3f}, {y:+.3f}, {z:+.3f}) g")
     elif packet_type == TYPE_LOG:

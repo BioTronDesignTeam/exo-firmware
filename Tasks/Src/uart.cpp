@@ -33,6 +33,15 @@ void send_telemetry_to_host(void*)
             telemetry.accel_y_g = MSA311Handle->msa311_data.y;
             telemetry.accel_z_g = MSA311Handle->msa311_data.z;
         }
+        if (bno085Handle != nullptr && bno085Handle->isInitialized()) {
+            telemetry.bno_quaternion_i = bno085Handle->rotationVector.i;
+            telemetry.bno_quaternion_j = bno085Handle->rotationVector.j;
+            telemetry.bno_quaternion_k = bno085Handle->rotationVector.k;
+            telemetry.bno_quaternion_real = bno085Handle->rotationVector.real;
+            telemetry.bno_accuracy_radians = bno085Handle->rotationVector.accuracyRadians;
+            telemetry.bno_status = bno085Handle->rotationVector.status;
+            telemetry.bno_valid = 1;
+        }
 
         (void)send_serial_packet(SerialPacketType::Telemetry, &telemetry, sizeof(telemetry));
         osDelay(200);

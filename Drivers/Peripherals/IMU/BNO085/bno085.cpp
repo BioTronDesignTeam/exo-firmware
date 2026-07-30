@@ -38,6 +38,14 @@ bool BNO085::begin() {
                     _initialized = enableReport(ROT_VECTOR, 10000U);
                     return _initialized;
                 }
+                // A MCU-only reset leaves the BNO085 running and it may
+                // already be streaming reports. A valid input-report packet
+                // proves the transport is alive, so restore the requested
+                // feature instead of waiting indefinitely for product ID.
+                if (_rxChannel == STANDARD_REPORTS) {
+                    _initialized = enableReport(ROT_VECTOR, 10000U);
+                    return _initialized;
+                }
             } else {
                 HAL_Delay(1U);
             }
