@@ -23,10 +23,18 @@ typedef struct __attribute__((packed)) {
 
 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void read_telemetry_from_uart();
 void write_data_to_stm (telemetry_data_t data);
 void uart_init();
 void uart2_mirror_task(void *arg);
 void stm_print();
+
+#ifdef __cplusplus
+}
+#endif
 
 

@@ -25,7 +25,7 @@ static esp_err_t http_event_handler(esp_http_client_event_t *evt)
         break;
 
     case HTTP_EVENT_ON_DATA:
-        if (!esp_http_client_is_chunked_response(evt->client)) {
+        {
             int copy_len = evt->data_len;
             int remaining = (int)sizeof(s_response_buf) - s_response_len - 1;
             if (copy_len > remaining) {
@@ -68,19 +68,6 @@ http_result_t http_post_json(const char *json_payload)
     s_response_len = 0;
     s_status_code  = -1;
 
-    /*esp_http_client_config_t config = {
-        .host            = HTTP_HOST,
-        .path            = HTTP_PATH,
-        .port            = HTTP_PORT,
-        .transport_type  = HTTP_USE_TLS
-                               ? HTTP_TRANSPORT_OVER_SSL
-                               : HTTP_TRANSPORT_OVER_TCP,
-        .event_handler   = http_event_handler,
-        .timeout_ms      = HTTP_TIMEOUT_MS,
-        // Certificate verification
-        .cert_pem        = HTTP_SERVER_CA_PEM,    // NULL = skip verification
-        .skip_cert_common_name_check = (HTTP_SERVER_CA_PEM == NULL),
-    };*/
     esp_http_client_config_t config = {
     .host                        = HTTP_HOST,
     .path                        = HTTP_PATH,
@@ -89,7 +76,7 @@ http_result_t http_post_json(const char *json_payload)
     .event_handler               = http_event_handler,
     .timeout_ms                  = HTTP_TIMEOUT_MS,
     .crt_bundle_attach           = esp_crt_bundle_attach,
-    .skip_cert_common_name_check = true,
+    .skip_cert_common_name_check = false,
 };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
