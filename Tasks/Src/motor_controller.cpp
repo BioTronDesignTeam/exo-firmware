@@ -1,5 +1,5 @@
 #include "motor_controller.hpp"
-#include "stm32H7xx_hal_fdcan.h"
+#include "stm32h7xx_hal_fdcan.h"
 #include <stdio.h>
 
 extern FDCAN_HandleTypeDef hfdcan1;
@@ -16,6 +16,10 @@ void motorControllerMainLoop(void *arg)
 {
   bool isClosedLoop = false;
 
+  while (odriveS1Handle == nullptr) {
+    osDelay(10);
+  }
+
   uint32_t time = HAL_GetTick();
   odriveS1Handle->getCANAddress();
   while(true)
@@ -27,7 +31,7 @@ void motorControllerMainLoop(void *arg)
 		  }
 		  else {
 			  odriveS1Handle->setAxisState(0x8);
-			  HAL_Delay(100);
+			  osDelay(100);
 			  odriveS1Handle->setInputVelocity(-5, -0.5);
 			  time = HAL_GetTick();
 			  isClosedLoop = true;
@@ -53,7 +57,7 @@ void motorControllerMainLoop(void *arg)
 
 	  printf("Current: %f \r\n", odriveS1Handle->busVoltageCurrent.busCurrent);
 	  BSP_LED_Toggle(LED_GREEN);
-	  HAL_Delay(50);
+	  osDelay(50);
   }
 }
 

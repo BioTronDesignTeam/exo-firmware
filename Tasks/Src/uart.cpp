@@ -1,196 +1,81 @@
-#include <cstring>
 #include "uart.hpp"
 #include <cmsis_os2.h>
-#include "imu.hpp"
 #include "drivers.hpp"
-//uart2: estop
-//uart4: to esp
-//uart5: to jetson or rpi
 
+namespace {
 
-extern UART_HandleTypeDef huart7;
-extern UART_HandleTypeDef huart2;
-extern osMessageQueueId_t esp_print_queue;
-
-void uint8_to_hex(uint8_t byte, uint8_t* output, uint16_t length) {
+void uint8_to_hex(uint8_t byte, uint8_t* output, uint16_t length)
+{
     static const char hex_digits[] = "0123456789ABCDEF";
-
     if (length < 6) {
-        // not enough room for "0x" + 2 hex digits (+ maybe a null terminator)
         return;
     }
-
     output[0] = '0';
     output[1] = 'x';
     output[2] = hex_digits[(byte >> 4) & 0x0F];
     output[3] = hex_digits[byte & 0x0F];
     output[4] = '\r';
     output[5] = '\n';
+}
 
-    if (length >= 7) {
-        output[4] = '\0'; // optional null terminator, if you want a C string
-    }
-}
-void empty_print_queue_to_esp(void* arg) {
-    log_message_t msg;
-
-    for (;;) {
-        // Block indefinitely until a message arrives
-        if (osMessageQueueGet(esp_print_queue, &msg, NULL, osWaitForever) == osOK) {
-            HAL_UART_Transmit(&huart2, msg.data, msg.len, 100);
-            BSP_LED_Toggle(LED_RED);
-        }
-    }
-}
-HAL_StatusTypeDef esp_print_byte(uint8_t byte) {
-	uint8_t buf[6];
-	uint8_to_hex(byte, buf, 6);
-	return esp_print(buf, 6);
-}
-HAL_StatusTypeDef esp_print(uint8_t* str, uint16_t len) {
-    log_message_t msg;
-    if (len > LOG_MSG_MAX_LEN) len = LOG_MSG_MAX_LEN; // truncate or reject
-    memcpy(msg.data, str, len);
-    msg.len = len;
-
-    if (osMessageQueuePut(esp_print_queue, &msg, 0U, 100U) != osOK) {
-        return HAL_ERROR; // queue full — dropped
-    }
-    return HAL_OK;
-}
-uint16_t crc16(uint8_t *data, uint32_t length)
+void send_telemetry_to_host(void*)
 {
-    uint16_t crc = 0x0000;
-    for (uint32_t i = 0; i < length; i++) {
-        crc ^= (uint16_t)data[i] << 8;  // bring byte into high bits
-        for (int bit = 0; bit < 8; bit++) {
-            if (crc & 0x8000)
-                crc = (crc << 1) ^ 0x1021;  // CCITT poly
-            else
-                crc = (crc << 1);
+    for (;;) {
+        serial_telemetry_payload_t telemetry = {
+            .timestamp_ms = HAL_GetTick(),
+            .accel_x_g = 0.0f,
+            .accel_y_g = 0.0f,
+            .accel_z_g = 0.0f,
+        };
+
+        if (MSA311Handle != nullptr) {
+            telemetry.accel_x_g = MSA311Handle->msa311_data.x;
+            telemetry.accel_y_g = MSA311Handle->msa311_data.y;
+            telemetry.accel_z_g = MSA311Handle->msa311_data.z;
         }
-    }
-    return crc;
-}
-
-
-telemetry_data_t get_telemetry_data() {
-    telemetry_data_t data = {0};
-    data.example1 = 1;
-    data.example2 = 2; 
-    data.example3 = 3;
-    // if (MPU6050Handle == nullptr) {
-    //     return data;
-    // }
-
-    // data.mpu6050_data.accel_x = MPU6050Handle->mpu6050_data.accel_x;
-    // data.mpu6050_data.accel_y = MPU6050Handle->mpu6050_data.accel_y;
-    // data.mpu6050_data.accel_z = MPU6050Handle->mpu6050_data.accel_z;
-    // data.mpu6050_data.gyro_x  = MPU6050Handle->mpu6050_data.gyro_x;
-    // data.mpu6050_data.gyro_y  = MPU6050Handle->mpu6050_data.gyro_y;
-    // data.mpu6050_data.gyro_z  = MPU6050Handle->mpu6050_data.gyro_z;
-    // data.mpu6050_data.temp = MPU6050Handle->mpu6050_data.temp;
-
-    return data;
-}
-
-void write_to_esp(telemetry_data_t data) {
-	telemetry_packet_t packet;
-	packet.header[0] = 0xAA;
-	packet.header[1] = 0x55;
-	memcpy (&packet.data, &data, sizeof(data));
-
-	packet.crc = crc16((uint8_t*)&packet.data, sizeof(telemetry_data_t));
-
-	HAL_StatusTypeDef err = HAL_UART_Transmit(&huart7, (uint8_t*)&packet, sizeof(telemetry_packet_t), HAL_MAX_DELAY);
-    //esp_print((uint8_t*)"Sent telemetry data to ESP\r\n", 24);
-    
-	if (err == HAL_OK) {
-        BSP_LED_Toggle(LED_GREEN);
-	}
-	if (err == HAL_ERROR) {
-		// BSP_LED_Toggle(LED_RED);
-	}
-	
-	osDelay(500);
-}
-
-void send_telemetry_to_esp(void* arg) { //to esp32
-
-	for ( ;; ) {
-		telemetry_data_t data = get_telemetry_data();
-		write_to_esp(data);
-		osDelay(500); //change this probably
-	}
-
-}
-
-void init_uart_tasks() {
-	osThreadId_t send_telemetry_to_esp_handle;
-	osThreadId_t empty_print_queue_to_esp_handle;
-
-	static const osThreadAttr_t send_telemetry_to_esp_attributes = {
-		.name = "SendTelemetrytoESP",
-		.stack_size = 1024,
-		.priority = (osPriority_t) osPriorityNormal
-	};
-	static const osThreadAttr_t empty_print_queue_to_esp_attributes = {
-			.name = "EmptyPrintQueueToESP",
-			.stack_size = 1024,
-			.priority = (osPriority_t) osPriorityNormal
-		};
-	send_telemetry_to_esp_handle = osThreadNew(send_telemetry_to_esp, NULL, &send_telemetry_to_esp_attributes);
-	empty_print_queue_to_esp_handle = osThreadNew(empty_print_queue_to_esp, NULL, &empty_print_queue_to_esp_attributes);
-
-}
-
-enum UART_STATE {
-    WAIT_AA,
-    WAIT_55,
-    READ_DATA
-};
-
-void read_telemetry_from_uart_esp() { //placeholder, need to figure out command structure being sent from esp
-	//this code can probably be repurposed into the receiver on the jetson
-	uint8_t MAGIC_BYTE_1 = 0xAA;
-	uint8_t MAGIC_BYTE_2 = 0x55;
-    enum UART_STATE state = WAIT_AA;
-    while (true) {
-        uint8_t byte;
-        switch (state) {
-            case WAIT_AA:
-                HAL_UART_Receive(&huart7, &byte, 1, HAL_MAX_DELAY);
-                if (byte == MAGIC_BYTE_1) {
-                    state = WAIT_55;
-                }
-            break;
-
-            case WAIT_55:
-                HAL_UART_Receive(&huart7, &byte, 1, HAL_MAX_DELAY);
-                if (byte == MAGIC_BYTE_2) {
-                    state = READ_DATA;
-                } else {
-                    state = WAIT_AA; // reset if not correct
-                }
-            break;
-
-            case READ_DATA:
-
-
-                telemetry_data_t data;
-                HAL_UART_Receive(&huart7, (uint8_t*)&data, sizeof(data), HAL_MAX_DELAY);
-                uint16_t received_crc;
-                HAL_UART_Receive(&huart7, (uint8_t*)&received_crc, sizeof(received_crc), HAL_MAX_DELAY);
-
-                //check crc
-                uint16_t computed_crc = crc16((uint8_t*)&data, sizeof(data)); //crc16((uint8_t*)&packet,
-                if (received_crc != computed_crc) {
-                    state = WAIT_AA; // reset if crc is wrong
-                    break;
-                }
-                // do something with the data here
-                state = WAIT_AA; // reset for next packet
-            break;
+        if (bno085Handle != nullptr && bno085Handle->isInitialized()) {
+            telemetry.bno_quaternion_i = bno085Handle->rotationVector.i;
+            telemetry.bno_quaternion_j = bno085Handle->rotationVector.j;
+            telemetry.bno_quaternion_k = bno085Handle->rotationVector.k;
+            telemetry.bno_quaternion_real = bno085Handle->rotationVector.real;
+            telemetry.bno_accuracy_radians = bno085Handle->rotationVector.accuracyRadians;
+            telemetry.bno_status = bno085Handle->rotationVector.status;
+            telemetry.bno_valid = 1;
         }
+
+        (void)send_serial_packet(SerialPacketType::Telemetry, &telemetry, sizeof(telemetry));
+        osDelay(200);
     }
+}
+
+} // namespace
+
+HAL_StatusTypeDef serial_print_byte(uint8_t byte)
+{
+    uint8_t buffer[6];
+    uint8_to_hex(byte, buffer, sizeof(buffer));
+    return serial_print(buffer, sizeof(buffer));
+}
+
+HAL_StatusTypeDef serial_print(uint8_t* str, uint16_t len)
+{
+    if (str == nullptr) {
+        return HAL_ERROR;
+    }
+    return send_serial_log(reinterpret_cast<const char*>(str), len) ? HAL_OK : HAL_ERROR;
+}
+
+void init_uart_tasks()
+{
+    if (!serial_protocol_init()) {
+        BSP_LED_On(LED_RED);
+        return;
+    }
+
+    static const osThreadAttr_t telemetry_attributes = {
+        .name = "SerialTelemetry",
+        .stack_size = 1024,
+        .priority = osPriorityNormal,
+    };
+    (void)osThreadNew(send_telemetry_to_host, nullptr, &telemetry_attributes);
 }

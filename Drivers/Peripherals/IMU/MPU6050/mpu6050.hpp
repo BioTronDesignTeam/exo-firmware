@@ -7,7 +7,7 @@
 #ifndef INC_MPU6050_I2C_HPP_
 #define INC_MPU6050_I2C_HPP_
 
-#include "stm32H7xx_hal.h"
+#include "stm32h7xx_hal.h"
 #include "mpu6050_registers.hpp"
 #include "mpu6050_data.hpp"
 class MPU6050{

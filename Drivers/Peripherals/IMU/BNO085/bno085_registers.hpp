@@ -2,8 +2,10 @@
 
 // I2C address (SA0 pin low = 0x4a << 1)
 static constexpr uint8_t BNO085_I2C_ADDR = 0x4a << 1;
+static constexpr uint8_t BNO085_I2C_ADDR_ALT = 0x4b << 1;
 
 // channels
+static constexpr uint8_t EXECUTABLE_CONTROL = 0x01;
 static constexpr uint8_t SENSOR_HUB_CONTROL = 0x02; //enable reports
 static constexpr uint8_t STANDARD_REPORTS = 0x03; //report requests
 
@@ -46,7 +48,12 @@ static constexpr uint8_t HEART_RATE_MONITOR = 0x23;
 static constexpr uint8_t SET_FEATURE_COMMAND = 0xFD;
 static constexpr uint8_t PRODUCT_ID_REQUEST = 0xF9;
 static constexpr uint8_t PRODUCT_ID_RESPONSE = 0xF8;
+static constexpr uint8_t RESET_COMPLETE = 0x01;
 
 typedef struct { float x, y, z; } bno085_accel_t; // units: g
-typedef struct { float i, j, k; } bno085_rot_vector_t; //units: unit quarternion
+typedef struct {
+    float i, j, k, real;
+    float accuracyRadians;
+    uint8_t status;
+} bno085_rot_vector_t;
 typedef struct { float x, y, z; } bno085_gyro_t; // units: deg/s
