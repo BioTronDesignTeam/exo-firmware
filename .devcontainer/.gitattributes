@@ -1,0 +1,1 @@
+stm32cubeclt_1.22-Lin-Deb-x86_64.sh.zip filter=lfs diff=lfs merge=lfs -text

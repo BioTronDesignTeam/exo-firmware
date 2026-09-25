@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Exo-Firmware STM32 One-Touch Build & Upload Script
+# ==============================================================================
+set -e
+
+# ANSI Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}====================================================${NC}"
+echo -e "${BLUE}    Exoskeleton Firmware — Build & Flash            ${NC}"
+echo -e "${BLUE}====================================================${NC}"
+
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$PROJECT_ROOT"
+
+# Step 1: Build the firmware
+echo -e "\n${YELLOW}[1/2] Building firmware...${NC}"
+
+if command -v cmake >/dev/null 2>&1 && command -v arm-none-eabi-gcc >/dev/null 2>&1; then
+    # Native host build
+    cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+    cmake --build build
+else
+    # Docker container build
+    echo -e "${BLUE}Using devcontainer build environment...${NC}"
+    docker run --rm -v "$PROJECT_ROOT":/workspace -w /workspace exo-firmware-dev bash -c \
+        "cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build build"
+fi
+
+BIN_FILE="$PROJECT_ROOT/build/exo-firmware.bin"
+
+if [ ! -f "$BIN_FILE" ]; then
+    echo -e "${RED}[ERROR] Firmware binary not found at $BIN_FILE${NC}"
+    exit 1
+fi
+
+# Step 2: Flash the target board
+echo -e "\n${YELLOW}[2/2] Flashing STM32H7 via ST-Link SWD...${NC}"
+
+if command -v STM32_Programmer_CLI >/dev/null 2>&1; then
+    # Native host Programmer CLI
+    STM32_Programmer_CLI -c port=SWD -w "$BIN_FILE" 0x08000000 -v -rst
+else
+    # Docker Programmer CLI (passes USB devices)
+    echo -e "${BLUE}Using ST-Link programmer inside devcontainer...${NC}"
+    docker run --rm --privileged \
+        -v /dev/bus/usb:/dev/bus/usb \
+        -v "$PROJECT_ROOT":/workspace \
+        -w /workspace \
+        exo-firmware-dev \
+        STM32_Programmer_CLI -c port=SWD -w build/exo-firmware.bin 0x08000000 -v -rst
+fi
+
+echo -e "\n${GREEN}====================================================${NC}"
+echo -e "${GREEN}    [SUCCESS] Build & Flash Complete. Board is running.${NC}"
+echo -e "${GREEN}====================================================${NC}"

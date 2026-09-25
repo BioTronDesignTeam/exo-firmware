@@ -1,19 +1,19 @@
 #pragma once
 #include <stdint.h>
+#include <string.h>
+extern "C" {
 
-typedef struct __attribute__((packed)) { //UPDATE THESE IN THE ESP FOLDER AS WELL!!
-    uint32_t example1;
-    uint32_t example2;
-    uint32_t example3;
-} telemetry_data_t;
+#include "main.h"
+#include "stm32h7xx_hal_def.h"
 
-typedef struct __attribute__((packed)) {
-    uint8_t header[2]; //0xAA, 0x55
-    telemetry_data_t data;
-    uint16_t crc; //crc16 of the data
-} telemetry_packet_t;
+}
+#include "serial_protocol.hpp"
 
-void spamUART(void* arg);
+#define SERIAL_PRINT(s) serial_print((uint8_t*)(s), (uint16_t)strlen(s))
+#define SERIAL_PRINTLN(s) serial_print((uint8_t*)(s "\r\n"), (uint16_t)strlen(s "\r\n"))
+
+HAL_StatusTypeDef serial_print_byte(uint8_t byte);
+HAL_StatusTypeDef serial_print(uint8_t* str, uint16_t len);
 void init_uart_tasks();
 
 

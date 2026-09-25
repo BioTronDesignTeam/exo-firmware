@@ -1,0 +1,21 @@
+{
+	"name": "STM32 Firmware Dev",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"cmake.configureOnOpen": true,
+				"cmake.generator": "Ninja"
+			},
+			"extensions": [
+				"ms-vscode.cmake-tools",
+				"ms-vscode.cpptools"
+			]
+		}
+	},
+	"runArgs": ["--privileged"],
+	"postCreateCommand": "arm-none-eabi-gcc --version && cmake --version"
+}
