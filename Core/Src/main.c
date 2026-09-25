@@ -150,7 +150,7 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
 
   initTasks(); //create task to forward queue to esp through uart
-  initDrivers(); //bno085 / print call
+  initDrivers(); 
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
