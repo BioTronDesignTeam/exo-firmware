@@ -149,6 +149,36 @@ docker run --rm -v "$PWD":/workspace -w /workspace exo-firmware-dev \
   bash -c 'cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build build'
 ```
 
+## Serial monitor
+
+`tools/exo_serial_host.py` reads telemetry and logs from the ST-LINK virtual
+COM port and can send pings to check acknowledgements. It uses pySerial on
+Linux, macOS, and Windows. The dev container installs Python and pySerial.
+
+For native Windows, install [Python 3](https://www.python.org/downloads/) and
+the ST-LINK USB driver, then install the script's dependency in a Windows
+terminal from the repository root:
+
+```powershell
+py -3 -m pip install -r tools/requirements.txt
+py -3 tools/exo_serial_host.py --list-ports
+py -3 tools/exo_serial_host.py --duration 8 --ping-interval 0.73
+```
+
+The script selects the ST-LINK virtual COM port when exactly one is found. If
+auto-detection cannot identify it, use the port shown by `--list-ports` or in
+Windows Device Manager under **Ports (COM & LPT)**:
+
+```powershell
+py -3 tools/exo_serial_host.py --port COM3 --duration 8 --ping-interval 0.73
+```
+
+Substitute your actual COM number. Close other serial monitors before running
+the script. On Linux, `python3 -m pip install -r tools/requirements.txt`
+provides pySerial for a host Python installation; the dev container already
+includes it. The existing `/dev/serial/by-id` selection and `/dev/ttyACM0`
+fallback remain available.
+
 ## Linux hardware iteration loop
 
 1. Make a focused change and flash it:

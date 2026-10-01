@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     ninja-build \
     git \
     git-lfs \
+    python3 \
+    python3-serial \
     unzip \
     libusb-1.0-0-dev \
     udev \
