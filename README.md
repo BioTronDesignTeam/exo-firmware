@@ -25,8 +25,8 @@ The ST-LINK provides both:
 | `Drivers/Peripherals/`     | Device drivers such as the BNO085 and MSA311 IMUs.                        |
 | `exo-firmware.ioc`         | STM32CubeMX configuration for STM32CubeIDE.                               |
 | `CMakeLists.txt`           | Authoritative CMake build source list.                                    |
-| `upload`                   | Linux/macOS build, flash, and reset.                                       |
-| `upload.cmd` / `upload.ps1` | Native Windows build, flash, and reset.                                    |
+| `upload`                   | Linux/macOS flash and reset; optional build with `--build`.               |
+| `upload.cmd` / `upload.ps1` | Windows flash and reset; optional native build with `-Build`.              |
 | `tools/exo_serial_host.py` | Decodes telemetry/log packets and checks ping acknowledgements.           |
 
 ## Development container setup
@@ -45,8 +45,36 @@ The ST-LINK provides both:
    ```
 
 The dev container supplies CMake, Ninja, the ARM cross compiler, and
-STM32CubeProgrammer. It runs privileged so the ST-LINK is accessible from
-inside the container.
+STM32CubeProgrammer. On Windows, build in the container and flash from the
+host using the workflow below. The ST-LINK stays attached to Windows; the
+container does not need USB access for building.
+
+### Build in the container, flash from Windows
+
+Install [STM32CubeProgrammer for Windows](https://www.st.com/en/development-tools/stm32cubeprog.html)
+and its ST-LINK USB driver. Add its `bin` directory to the Windows PATH.
+Windows does not need CMake, Ninja, or an ARM compiler for this workflow.
+
+Open the Windows checkout in VS Code and use
+**Dev Containers: Reopen in Container**. Build from the repository root in
+the container terminal:
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build
+```
+
+The mounted checkout makes `build/exo-firmware.bin` available on Windows.
+Connect the board's ST-LINK USB port, open Windows PowerShell outside the
+container, and run from the repository directory:
+
+```powershell
+.\upload.cmd
+```
+
+This only flashes, verifies, and resets the board. It never builds or reads
+the container's CMake cache. Rebuild in the container after each source change
+before uploading. Do not attach the ST-LINK to WSL for this host-flash route.
 
 ### First-time image build
 
@@ -78,12 +106,13 @@ Install these once:
 Open a new terminal after editing PATH. From the repository directory, run:
 
 ```powershell
-.\upload.cmd
+.\upload.cmd -Build
 ```
 
-Or run `.\upload.ps1` from PowerShell if your execution policy allows it.
+Or run `.\upload.ps1 -Build` from PowerShell if your execution policy allows it.
 The CMD wrapper launches PowerShell for this run without changing the system
-execution policy. The script checks each tool, builds in `build/windows/`,
+execution policy. With `-Build`, the script checks each build tool,
+builds in `build/windows/`,
 checks the generated binary, then programs and verifies it over SWD at
 `0x08000000` before resetting. The separate build directory keeps the native
 Windows CMake cache away from the Linux dev container cache in `build/`.
@@ -117,7 +146,7 @@ Existing WSL2 users can continue the Linux build, flash, and serial workflow.
    ```
 
 5. From the WSL repository directory, run `code .`, then use **Dev
-   Containers: Reopen in Container**. Run `./upload` and the serial-monitor
+   Containers: Reopen in Container**. Run `./upload --build` and the serial-monitor
    command from that environment.
 
 ## STM32CubeIDE and CubeMX
@@ -134,12 +163,16 @@ Before generating code:
 1. Save the working tree and preserve `/* USER CODE BEGIN */` sections.
 2. Review generated changes.
 3. Add new `.c`/`.cpp` files to `C_SOURCES`/`CXX_SOURCES` in `CMakeLists.txt`.
-4. Rebuild with `./upload`.
+4. Rebuild and flash with `./upload --build`.
 
 ## Build and flash
 
-From the repository root, use `./upload` on Linux/macOS or `./upload.cmd`
-on native Windows. Both build, verify, flash at `0x08000000`, and reset the MCU.
+From the repository root, use `./upload` on Linux/macOS to flash an existing
+`build/exo-firmware.bin`, or `./upload --build` to build first. Bash also accepts
+`-Build` as an alias for the PowerShell spelling.
+On Windows, use `./upload.cmd` to flash the existing container-built binary,
+or `./upload.cmd -Build` to build natively first. All upload routes verify the
+flash at `0x08000000` and reset the MCU.
 
 To build without flashing on Linux, do not use a host build against an
 existing container-created `build/` cache. Run:
@@ -184,7 +217,7 @@ fallback remain available.
 1. Make a focused change and flash it:
 
    ```bash
-   ./upload
+   ./upload --build
    ```
 
 2. Check serial output:
