@@ -4,6 +4,24 @@
 # ==============================================================================
 set -e
 
+BUILD=false
+for argument in "$@"; do
+    case "$argument" in
+        --build|-Build)
+            BUILD=true
+            ;;
+        -h|--help)
+            echo "Usage: ./upload [--build]"
+            echo "Flash build/exo-firmware.bin; --build builds the firmware first."
+            exit 0
+            ;;
+        *)
+            echo "Unknown argument: $argument. Use ./upload --help." >&2
+            exit 2
+            ;;
+    esac
+done
+
 # ANSI Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -12,35 +30,37 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}====================================================${NC}"
-echo -e "${BLUE}    Exoskeleton Firmware — Build & Flash            ${NC}"
+echo -e "${BLUE}    Exoskeleton Firmware — Flash                    ${NC}"
 echo -e "${BLUE}====================================================${NC}"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PROJECT_ROOT"
 
-# Step 1: Build the firmware
-echo -e "\n${YELLOW}[1/2] Building firmware...${NC}"
-
-if command -v cmake >/dev/null 2>&1 && command -v arm-none-eabi-gcc >/dev/null 2>&1; then
-    # Native host build
-    cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
-    cmake --build build
-else
-    # Docker container build
-    echo -e "${BLUE}Using devcontainer build environment...${NC}"
-    docker run --rm -v "$PROJECT_ROOT":/workspace -w /workspace exo-firmware-dev bash -c \
-        "cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build build"
+# Build only when explicitly requested.
+if [ "$BUILD" = true ]; then
+    echo -e "\n${YELLOW}Building firmware...${NC}"
+    if command -v cmake >/dev/null 2>&1 && command -v arm-none-eabi-gcc >/dev/null 2>&1; then
+        # Native host build
+        cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+        cmake --build build
+    else
+        # Docker container build
+        echo -e "${BLUE}Using devcontainer build environment...${NC}"
+        docker run --rm -v "$PROJECT_ROOT":/workspace -w /workspace exo-firmware-dev bash -c \
+            "cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug && cmake --build build"
+    fi
 fi
 
 BIN_FILE="$PROJECT_ROOT/build/exo-firmware.bin"
 
 if [ ! -f "$BIN_FILE" ]; then
     echo -e "${RED}[ERROR] Firmware binary not found at $BIN_FILE${NC}"
+    echo "Build in the dev container first, or run ./upload --build." >&2
     exit 1
 fi
 
 # Step 2: Flash the target board
-echo -e "\n${YELLOW}[2/2] Flashing STM32H7 via ST-Link SWD...${NC}"
+echo -e "\n${YELLOW}Flashing STM32H7 via ST-Link SWD...${NC}"
 
 if command -v STM32_Programmer_CLI >/dev/null 2>&1; then
     # Native host Programmer CLI
@@ -57,5 +77,5 @@ else
 fi
 
 echo -e "\n${GREEN}====================================================${NC}"
-echo -e "${GREEN}    [SUCCESS] Build & Flash Complete. Board is running.${NC}"
+echo -e "${GREEN}    [SUCCESS] Flash verified. Board is running.      ${NC}"
 echo -e "${GREEN}====================================================${NC}"
