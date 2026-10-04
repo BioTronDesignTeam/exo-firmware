@@ -8,7 +8,7 @@
 extern "C" void initTasks() {
 	init_uart_tasks();
 	init_imu_tasks();
-	//motorControllerInitTask();
+	motorControllerInitTask();
 }
 
 extern "C" void initDrivers() {

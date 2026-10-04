@@ -4,6 +4,12 @@ set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/stm32h7.cmake)
 
 project(exo-firmware C CXX ASM)
 
+set(ODRIVE_CAN_NODE_ID "0" CACHE STRING "ODrive CAN node ID (0-62)")
+if(NOT ODRIVE_CAN_NODE_ID MATCHES "^[0-9]+$" OR ODRIVE_CAN_NODE_ID GREATER 62)
+    message(FATAL_ERROR "ODRIVE_CAN_NODE_ID must be between 0 and 62")
+endif()
+add_compile_definitions(ODRIVE_CAN_NODE_ID=${ODRIVE_CAN_NODE_ID})
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 

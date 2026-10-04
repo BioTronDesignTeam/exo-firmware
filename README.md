@@ -197,3 +197,44 @@ fallback remain available.
 
 3. Verify telemetry, logs, ping ACKs, and `crc_errors=0`. Repeat after every
    hardware-facing change.
+
+## ODrive bench test (`morgan/testing`)
+
+The motor task starts with the scheduler, confirms that the ODrive is idle, and
+waits for the NUCLEO's blue USER button. Press and release it to start a **1 turn/s**
+velocity test with zero torque feedforward; press it again to stop. Holding the
+button does not repeatedly toggle the test. Startup explicitly selects velocity
+control with passthrough input and waits for a fresh closed-loop heartbeat before
+sending the nonzero velocity. Commands repeat every 50 ms to feed the watchdog.
+A lost heartbeat, axis error, closed-loop timeout, or failed velocity TX stops the
+test. It does not restart automatically after reconnection or an error.
+
+ODrive requirements:
+
+- Complete motor/encoder calibration and configure appropriate current and
+  velocity limits on the ODrive first. Firmware does not clear errors or calibrate
+  a motor automatically. The old arbitrary 0.1 A bus-current cutoff is replaced
+  by ODrive's configured protection limits and axis-error monitoring.
+- Enable CANSimple, use **500 kbit/s Classic CAN**, and set node ID **0** by default.
+  The STM32 FDCAN clock is 120 MHz and its nominal bit length is 240 quanta.
+  Use a CAN transceiver between STM32 PD1 (TX)/PD0 (RX) and the CAN bus, with a
+  common ground and proper bus termination.
+- Enable heartbeat feedback at 100 ms. The firmware considers it stale after
+  500 ms. If enabling ODrive's watchdog, use a timeout of at least 200 ms and
+  account for the actual scheduler/bus load.
+- For another node ID, configure with
+  `cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DODRIVE_CAN_NODE_ID=7`.
+  Valid IDs are 0-62; 63 is reserved for broadcast. The TX address, RX filter,
+  and RX decoder all use the same configured ID.
+
+Read diagnostics through `python3 tools/exo_serial_host.py` (on Windows use
+`py tools/exo_serial_host.py`). Log frames show node ID, heartbeat connection,
+axis state, axis error, procedure result, and the last requested active errors
+and disarm reason. `NO HEARTBEAT` points to CAN configuration/wiring rather than
+an accepted motor command. A closed-loop timeout with a working heartbeat points
+to calibration or ODrive configuration; inspect the reported errors in ODrive's
+GUI or `odrivetool`. Error values persist until another error response arrives.
+
+The `Firmware dev-container build` PR check builds `.devcontainer/Dockerfile`,
+runs host tests, and cross-compiles Debug firmware for nodes 0 and 7. It produces
+ELF, HEX, and BIN files without connecting to or flashing a board.

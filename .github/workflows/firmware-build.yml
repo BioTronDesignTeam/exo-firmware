@@ -1,0 +1,31 @@
+name: Firmware dev-container build
+
+on:
+  pull_request:
+    branches: [main, morgan/testing]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Build repository dev container
+        run: docker build -t exo-firmware-dev .devcontainer
+      - name: Build STM32 firmware and run host tests
+        run: |
+          docker run --rm -v "$PWD":/workspace -w /workspace exo-firmware-dev bash -euc '
+            python3 -m unittest discover -s tests
+            cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+            cmake --build build
+            test -s build/exo-firmware.elf
+            test -s build/exo-firmware.hex
+            test -s build/exo-firmware.bin
+            cmake -S . -B build/node7 -G Ninja -DCMAKE_BUILD_TYPE=Debug -DODRIVE_CAN_NODE_ID=7
+            cmake --build build/node7
+          '
