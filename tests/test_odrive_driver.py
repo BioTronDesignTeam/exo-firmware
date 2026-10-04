@@ -25,6 +25,22 @@ class ODriveDriverTests(unittest.TestCase):
                     ], check=True)
                     subprocess.run([str(executable)], check=True)
 
+    def test_motor_start_stop_and_faults(self):
+        with tempfile.TemporaryDirectory() as directory:
+            executable = pathlib.Path(directory) / "motor-controller"
+            subprocess.run([
+                "g++", "-std=c++17", "-Wall", "-Wextra", "-Werror",
+                "-I" + str(ROOT / "tests/odrive_stubs"),
+                "-I" + str(ROOT / "Tasks/Inc"),
+                "-I" + str(ROOT / "Drivers/Peripherals/Motors/OdriveS1"),
+                "-I" + str(ROOT / "Drivers/Peripherals/Communication/CAN_Simple"),
+                str(ROOT / "Drivers/Peripherals/Motors/OdriveS1/odriveS1.cpp"),
+                str(ROOT / "Tasks/Src/motor_controller.cpp"),
+                str(ROOT / "tests/motor_controller_test.cpp"),
+                "-o", str(executable),
+            ], check=True)
+            subprocess.run([str(executable)], check=True)
+
 
 if __name__ == "__main__":
     unittest.main()
