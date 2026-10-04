@@ -65,3 +65,42 @@ void motorControllerInitTask()
 {
     motorControllerTaskHandle = osThreadNew(motorControllerMainLoop, NULL, &motorController_attributes);
 }
+
+void motorTestTask(void *arg)
+{
+    while (odriveS1Handle == nullptr)
+    {
+        osDelay(10);
+    }
+
+    // Put motor into closed-loop control
+    odriveS1Handle->setAxisState(0x8);
+
+    osDelay(100);
+
+    // Command a velocity
+    odriveS1Handle->setInputVelocity(1.0f, 0.0f);
+
+    while (true)
+    {
+        osDelay(100);
+    }
+}
+
+osThreadId_t motorTestTaskHandle;
+
+static const osThreadAttr_t motorTestTask_attributes = {
+    .name = "MotorTest",
+    .stack_size = 1024,
+    .priority = (osPriority_t) osPriorityNormal
+};
+
+void motorTestInitTask()
+{
+    motorTestTaskHandle =
+        osThreadNew(
+            motorTestTask,
+            NULL,
+            &motorTestTask_attributes
+        );
+}
