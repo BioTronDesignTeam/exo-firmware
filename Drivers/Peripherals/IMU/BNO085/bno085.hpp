@@ -1,6 +1,7 @@
 #pragma once
 
 #include "stm32h7xx_hal.h"
+#include "cmsis_os2.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "bno085_registers.hpp"
@@ -23,7 +24,12 @@ private:
     bool _productIdReceived = false;
     bool _initialized = false;
     bno085_rot_vector_t _rotationVector = {0};
+    osSemaphoreId_t _transferDone = nullptr;
+    volatile bool _transferOk = false;
 
+    static BNO085* _instance;
+
+    bool waitForTransfer(uint32_t timeoutMs);
     bool transmitPacket(uint8_t channel, const uint8_t* payload, uint16_t payloadLength);
     bool receivePacket(uint32_t timeoutMs);
     bool dispatchPacket();
@@ -43,6 +49,8 @@ public:
     bool begin();
     bool receiveReports();
     bool isInitialized() const;
+
+    static void handleI2CEvent(I2C_HandleTypeDef* hi2c, bool ok);
 
     bno085_rot_vector_t getRotationVector() const {
         taskENTER_CRITICAL();

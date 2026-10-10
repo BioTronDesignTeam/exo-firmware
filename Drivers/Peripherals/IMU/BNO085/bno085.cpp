@@ -1,7 +1,34 @@
 #include "bno085.hpp"
 #include <string.h>
 
-BNO085::BNO085(I2C_HandleTypeDef* i2cHandle) : _hi2c(i2cHandle) {}
+BNO085* BNO085::_instance = nullptr;
+
+BNO085::BNO085(I2C_HandleTypeDef* i2cHandle) : _hi2c(i2cHandle) {
+    _transferDone = osSemaphoreNew(1, 0, nullptr);
+    _instance = this;
+}
+
+void BNO085::handleI2CEvent(I2C_HandleTypeDef* hi2c, bool ok) {
+    if (_instance == nullptr || _instance->_hi2c != hi2c) {
+        return;
+    }
+    _instance->_transferOk = ok;
+    (void)osSemaphoreRelease(_instance->_transferDone);
+}
+
+bool BNO085::waitForTransfer(uint32_t timeoutMs) {
+    if (osSemaphoreAcquire(_transferDone, timeoutMs) == osOK) {
+        return _transferOk;
+    }
+
+    (void)HAL_I2C_Master_Abort_IT(_hi2c, _i2cAddress);
+    (void)osSemaphoreAcquire(_transferDone, 10U);
+    if (HAL_I2C_GetState(_hi2c) != HAL_I2C_STATE_READY) {
+        (void)HAL_I2C_DeInit(_hi2c);
+        (void)HAL_I2C_Init(_hi2c);
+    }
+    return false;
+}
 
 bool BNO085::begin() {
     if (_hi2c == nullptr) {
@@ -14,7 +41,7 @@ bool BNO085::begin() {
 
     // The BNO085 may advertise itself immediately after power-up. Give its
     // firmware time to boot, then request product information explicitly.
-    HAL_Delay(100);
+    osDelay(100);
     const uint8_t productIdRequest[] = {PRODUCT_ID_REQUEST};
     const uint16_t addresses[] = {BNO085_I2C_ADDR, BNO085_I2C_ADDR_ALT};
     for (const uint16_t address : addresses) {
@@ -47,7 +74,7 @@ bool BNO085::begin() {
                     return _initialized;
                 }
             } else {
-                HAL_Delay(1U);
+                osDelay(1U);
             }
         }
     }
@@ -79,7 +106,9 @@ bool BNO085::transmitPacket(uint8_t channel, const uint8_t* payload, uint16_t pa
     _txBuffer[3] = _txSequence[channel]++;
     memcpy(_txBuffer + SHTP_HEADER_LENGTH, payload, payloadLength);
 
-    if (HAL_I2C_Master_Transmit(_hi2c, _i2cAddress, _txBuffer, totalLength, 100U) != HAL_OK) {
+    (void)osSemaphoreAcquire(_transferDone, 0);
+    if (HAL_I2C_Master_Transmit_IT(_hi2c, _i2cAddress, _txBuffer, totalLength) != HAL_OK ||
+        !waitForTransfer(100U)) {
         ++i2cErrors;
         return false;
     }
@@ -90,7 +119,9 @@ bool BNO085::receivePacket(uint32_t timeoutMs) {
     // The BNO085 I2C transport restarts its read cursor on every STOP. Read
     // a complete transport frame in one transaction, then use its SHTP header
     // to determine how many received bytes are meaningful.
-    if (HAL_I2C_Master_Receive(_hi2c, _i2cAddress, _rxBuffer, sizeof(_rxBuffer), timeoutMs) != HAL_OK) {
+    (void)osSemaphoreAcquire(_transferDone, 0);
+    if (HAL_I2C_Master_Receive_IT(_hi2c, _i2cAddress, _rxBuffer, sizeof(_rxBuffer)) != HAL_OK ||
+        !waitForTransfer(timeoutMs)) {
         ++i2cErrors;
         return false;
     }
