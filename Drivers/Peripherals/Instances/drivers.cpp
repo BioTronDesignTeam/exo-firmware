@@ -1,5 +1,6 @@
 #include "drivers.hpp"
 #include "cmsis_os2.h"
+#include "stm32h7xx_nucleo.h"
 // Credit: WARG efs-zeropilot for code structure!
 #include <new>
 // All the hardware handles
@@ -25,7 +26,11 @@ BNO085 *bno085Handle = nullptr;
 // Driver Initialization
 void initializeDrivers(void* arg) {
 	for ( ;; ) {
-		odriveS1Handle = new (&odrives1Storage) ODRIVES1(&hfdcan1);
+		// TODO: initialize rest of ODrives
+		odriveS1Handle = new (&odrives1Storage) ODRIVES1(&hfdcan1, 0); // node 0
+		if (ODRIVES1::startBus(&hfdcan1) != HAL_OK) {
+			BSP_LED_On(LED_RED);
+		}
 		//MSA311Handle = new (&msa311Storage) MSA311(&hi2c1);
 		bno085Handle = new (&bno085Storage) BNO085(&hi2c1);
 		// MPU6050Handle = new (&mpu6050Storage) MPU6050(&hi2c1);

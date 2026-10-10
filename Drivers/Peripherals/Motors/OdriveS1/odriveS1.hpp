@@ -9,19 +9,30 @@
 #ifndef INC_ODRIVES1_CAN_HPP_
 #define INC_ODRIVES1_CAN_HPP_
 
+#include <cstdint>
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_hal_fdcan.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include "can_simple.hpp"
 
 class ODRIVES1 {
+public:
+	// Must not exceed StdFiltersNbr in MX_FDCAN1_Init
+	static constexpr uint8_t MAX_INSTANCES = 4;
+
 private:
 	FDCAN_HandleTypeDef* _can;
+	uint8_t _nodeId; // Must match axis0.config.can.node_id
 	FDCAN_FilterTypeDef odriveCanFilter;
+
+	static ODRIVES1* instances[MAX_INSTANCES];
+	static uint8_t instanceCount;
+
+	void handleFrame(uint32_t identifier, const uint8_t* data);
 
 public:
 	// Internal States
-	uint8_t odriveRxBuffer[FDCAN_DLC_BYTES_8] = {0};
-	FDCAN_RxHeaderTypeDef odriveCanRxHeader= {0};
 	odrive_can_version_t version = {0};
 	odrive_can_heartbeat_t heartbeat = {0};
 	odrive_can_error_t error = {0};
@@ -34,8 +45,27 @@ public:
 	odrive_can_power_t power = {0};
 	odrive_can_txSdo_t latestEndpointChange = {0};
 
+	uint32_t txErrors = 0;
+	static volatile uint32_t busOffEvents;
+	static volatile uint32_t rxFramesLost;
 
-	ODRIVES1 (FDCAN_HandleTypeDef* fdcanhandle);
+
+	ODRIVES1 (FDCAN_HandleTypeDef* fdcanhandle, uint8_t nodeId);
+
+	static HAL_StatusTypeDef startBus(FDCAN_HandleTypeDef* fdcanhandle);
+
+	static void handleRxFifo0(FDCAN_HandleTypeDef* fdcanhandle);
+	static void recoverBusOff(FDCAN_HandleTypeDef* fdcanhandle);
+
+	uint8_t nodeId() const { return _nodeId; }
+
+	template <typename T>
+	T read(const T& field) const {
+		taskENTER_CRITICAL();
+		T copy = field;
+		taskEXIT_CRITICAL();
+		return copy;
+	}
 
 	// CAN send function
 	HAL_StatusTypeDef sendMsgCAN(uint32_t identifier, bool isRemote, const uint8_t* txBuffer = nullptr);
@@ -52,14 +82,12 @@ public:
 	HAL_StatusTypeDef getTorques();
 	HAL_StatusTypeDef getPowers();
 
-	// Callback for messages from odrive
-	HAL_StatusTypeDef responseCallback(uint32_t identifier);
+	HAL_StatusTypeDef estop();
 
-	// TODO: Add proper parameters to following sections
 	// Setters
-	HAL_StatusTypeDef setAxisState(uint32_t requestedState);
-	HAL_StatusTypeDef setControllerMode(uint32_t controlMode, uint32_t inputMode);
-	HAL_StatusTypeDef setInputPosition(float inputPos, int16_t inputVel, int16_t inputTorque);
+	HAL_StatusTypeDef setAxisState(AxisState requestedState);
+	HAL_StatusTypeDef setControllerMode(ControlMode controlMode, InputMode inputMode);
+	HAL_StatusTypeDef setInputPosition(float inputPos, float velocityFeedForward, float torqueFeedForward);
 	HAL_StatusTypeDef setInputVelocity(float inputVel, float inputTorque);
 	HAL_StatusTypeDef setInputTorque(float inputTorque);
 	HAL_StatusTypeDef setLimits(float velLimit, float currentSoftMax);

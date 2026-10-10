@@ -2,7 +2,6 @@
 
 #include "stm32h7xx_nucleo.h"
 #include "drivers.hpp"
-#include <cstring>
 
 extern
 
@@ -19,28 +18,31 @@ void Error_Handler(void)
 
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
-  if (hfdcan == nullptr || hfdcan->Instance != FDCAN1 || odriveS1Handle == nullptr)
+  if (hfdcan == nullptr || hfdcan->Instance != FDCAN1)
   {
     return;
   }
 
+  if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_MESSAGE_LOST) != RESET)
+  {
+    ++ODRIVES1::rxFramesLost;
+  }
+
   if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET)
   {
-    /* Retrieve Rx messages from RX FIFO0 */
-    if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &odriveS1Handle->odriveCanRxHeader, odriveS1Handle->odriveRxBuffer) == HAL_OK)
-    {
-      odriveS1Handle->responseCallback(odriveS1Handle->odriveCanRxHeader.Identifier);
-    }
-    else
-    {
-      BSP_LED_On(LED_RED);
-    }
+    ODRIVES1::handleRxFifo0(hfdcan);
+  }
+}
 
-    if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
-    {
-      BSP_LED_On(LED_RED);
-    }
+void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t ErrorStatusITs)
+{
+  if (hfdcan == nullptr || hfdcan->Instance != FDCAN1)
+  {
+    return;
+  }
 
-    memset(odriveS1Handle->odriveRxBuffer, 0, 8);
+  if ((ErrorStatusITs & FDCAN_IT_BUS_OFF) != RESET)
+  {
+    ODRIVES1::recoverBusOff(hfdcan);
   }
 }
