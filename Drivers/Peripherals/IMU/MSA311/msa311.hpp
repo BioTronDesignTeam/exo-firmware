@@ -1,7 +1,14 @@
 #pragma once
 
 #include "stm32h7xx_hal.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include "msa311_registers.hpp"
+
+// Sensor data struct
+typedef struct {
+    float x, y, z; // units: g
+} msa311_accel_t;
 
 class MSA311 {
 private:
@@ -10,11 +17,15 @@ private:
 
     float _accelSensitivity = 16384.0f; //default 2g
 
+    msa311_accel_t msa311_data = {0};
+
 public:
-    // Sensor data structs
-    struct {
-        float x, y, z; // units: g
-    } msa311_data = {0};
+    msa311_accel_t getAccelData() const {
+        taskENTER_CRITICAL();
+        const msa311_accel_t copy = msa311_data;
+        taskEXIT_CRITICAL();
+        return copy;
+    }
 
     // Constructor stores the I2C handle. It also wakes up the MSA311 and verifies communication by reading the PARTID register.
     // Turns on the red LED if communication fails.

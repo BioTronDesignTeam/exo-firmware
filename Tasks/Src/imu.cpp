@@ -17,10 +17,9 @@ void update_msa311(void *arg) {
 
         if (MSA311Handle != nullptr) {
             if (MSA311Handle->getAccel() == HAL_OK) {
+                const msa311_accel_t accel = MSA311Handle->getAccelData();
                 snprintf(buf, sizeof(buf), "MSA X=%.2f Y=%.2f Z=%.2f\r\n",
-                         MSA311Handle->msa311_data.x,
-                         MSA311Handle->msa311_data.y,
-                         MSA311Handle->msa311_data.z);
+                         accel.x, accel.y, accel.z);
                 SERIAL_PRINT(buf);
             } else {
                 SERIAL_PRINT("MSA read failed\r\n");
@@ -86,7 +85,7 @@ static void update_bno085(void *arg) {
         if ((now - lastDiagnosticsMs) >= 1000U) {
             lastDiagnosticsMs = now;
             char buffer[240];
-            const bno085_rot_vector_t& rotation = bno085Handle->rotationVector;
+            const bno085_rot_vector_t rotation = bno085Handle->getRotationVector();
             snprintf(buffer, sizeof(buffer),
                      "BNO085 q=(%.4f,%.4f,%.4f,%.4f) status=%u acc=%.3f "
                      "packets=%lu i2c_errors=%lu malformed=%lu last=%u ch=%u data=%02X%02X%02X%02X\r\n",

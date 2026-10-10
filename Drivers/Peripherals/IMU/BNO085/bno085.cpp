@@ -181,12 +181,17 @@ void BNO085::parseRotVector(uint16_t reportOffset) {
     constexpr float quaternionScale = 1.0f / 16384.0f;
     constexpr float accuracyScale = 1.0f / 4096.0f;
 
-    rotationVector.status = _rxBuffer[reportOffset + 2U] & 0x03U;
-    rotationVector.i = readLe16(reportOffset + 4U) * quaternionScale;
-    rotationVector.j = readLe16(reportOffset + 6U) * quaternionScale;
-    rotationVector.k = readLe16(reportOffset + 8U) * quaternionScale;
-    rotationVector.real = readLe16(reportOffset + 10U) * quaternionScale;
-    rotationVector.accuracyRadians = readLe16(reportOffset + 12U) * accuracyScale;
+    bno085_rot_vector_t rotation;
+    rotation.status = _rxBuffer[reportOffset + 2U] & 0x03U;
+    rotation.i = readLe16(reportOffset + 4U) * quaternionScale;
+    rotation.j = readLe16(reportOffset + 6U) * quaternionScale;
+    rotation.k = readLe16(reportOffset + 8U) * quaternionScale;
+    rotation.real = readLe16(reportOffset + 10U) * quaternionScale;
+    rotation.accuracyRadians = readLe16(reportOffset + 12U) * accuracyScale;
+
+    taskENTER_CRITICAL();
+    _rotationVector = rotation;
+    taskEXIT_CRITICAL();
 }
 
 bool BNO085::isInitialized() const {

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "stm32h7xx_hal.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include "bno085_registers.hpp"
 
 class BNO085 {
@@ -20,6 +22,7 @@ private:
     bool _discardingContinuation = false;
     bool _productIdReceived = false;
     bool _initialized = false;
+    bno085_rot_vector_t _rotationVector = {0};
 
     bool transmitPacket(uint8_t channel, const uint8_t* payload, uint16_t payloadLength);
     bool receivePacket(uint32_t timeoutMs);
@@ -29,7 +32,6 @@ private:
 
 public:
     bno085_accel_t acceleration = {0};
-    bno085_rot_vector_t rotationVector = {0};
     uint32_t packetsReceived = 0;
     uint32_t i2cErrors = 0;
     uint32_t malformedPackets = 0;
@@ -41,4 +43,11 @@ public:
     bool begin();
     bool receiveReports();
     bool isInitialized() const;
+
+    bno085_rot_vector_t getRotationVector() const {
+        taskENTER_CRITICAL();
+        const bno085_rot_vector_t copy = _rotationVector;
+        taskEXIT_CRITICAL();
+        return copy;
+    }
 };
