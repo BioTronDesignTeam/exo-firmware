@@ -20,6 +20,9 @@ class ODRIVES1 {
 public:
 	// Must not exceed StdFiltersNbr in MX_FDCAN1_Init
 	static constexpr uint8_t MAX_INSTANCES = 4;
+	// Bit timing in MX_FDCAN1_Init is calculated for this kernel clock
+	static constexpr uint32_t KERNEL_CLOCK_HZ = 120000000;
+	static constexpr uint32_t KERNEL_CLOCK_TOLERANCE_HZ = 1000;
 
 private:
 	FDCAN_HandleTypeDef* _can;

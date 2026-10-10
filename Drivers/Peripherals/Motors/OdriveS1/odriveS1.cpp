@@ -53,6 +53,12 @@ ODRIVES1::ODRIVES1 (FDCAN_HandleTypeDef* fdcanhandle, uint8_t nodeId) : _can(fdc
 }
 
 HAL_StatusTypeDef ODRIVES1::startBus(FDCAN_HandleTypeDef* fdcanhandle) {
+	const uint32_t kernelClock = HAL_RCCEx_GetPeriphCLKFreq(RCC_PERIPHCLK_FDCAN);
+	if (kernelClock < KERNEL_CLOCK_HZ - KERNEL_CLOCK_TOLERANCE_HZ ||
+	    kernelClock > KERNEL_CLOCK_HZ + KERNEL_CLOCK_TOLERANCE_HZ) {
+		return HAL_ERROR;
+	}
+
 	if (HAL_FDCAN_ConfigGlobalFilter(fdcanhandle, FDCAN_REJECT, FDCAN_REJECT,
 	                                 FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE) != HAL_OK) {
 		return HAL_ERROR;
