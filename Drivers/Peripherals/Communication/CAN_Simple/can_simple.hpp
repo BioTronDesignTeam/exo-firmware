@@ -53,6 +53,36 @@ enum class OpCode : uint8_t { // Explicitly set underlying type to char
 	Write
 };
 
+enum class AxisState : uint32_t {
+	Undefined = 0,
+	Idle = 1,
+	StartupSequence = 2,
+	FullCalibrationSequence = 3,
+	MotorCalibration = 4,
+	EncoderIndexSearch = 6,
+	EncoderOffsetCalibration = 7,
+	ClosedLoopControl = 8
+};
+
+enum class ControlMode : uint32_t {
+	Voltage = 0,
+	Torque = 1,
+	Velocity = 2,
+	Position = 3
+};
+
+enum class InputMode : uint32_t {
+	Inactive = 0,
+	Passthrough = 1,
+	VelocityRamp = 2,
+	PositionFilter = 3,
+	MixChannels = 4,
+	TrapezoidalTrajectory = 5,
+	TorqueRamp = 6,
+	Mirror = 7,
+	Tuning = 8
+};
+
 // Getters return structs
 typedef struct {
 	uint8_t protocolVersion; // This should always be 2 according to docs

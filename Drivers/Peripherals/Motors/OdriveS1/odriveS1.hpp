@@ -84,11 +84,10 @@ public:
 
 	HAL_StatusTypeDef estop();
 
-	// TODO: Add proper parameters to following sections
 	// Setters
-	HAL_StatusTypeDef setAxisState(uint32_t requestedState);
-	HAL_StatusTypeDef setControllerMode(uint32_t controlMode, uint32_t inputMode);
-	HAL_StatusTypeDef setInputPosition(float inputPos, int16_t inputVel, int16_t inputTorque);
+	HAL_StatusTypeDef setAxisState(AxisState requestedState);
+	HAL_StatusTypeDef setControllerMode(ControlMode controlMode, InputMode inputMode);
+	HAL_StatusTypeDef setInputPosition(float inputPos, float velocityFeedForward, float torqueFeedForward);
 	HAL_StatusTypeDef setInputVelocity(float inputVel, float inputTorque);
 	HAL_StatusTypeDef setInputTorque(float inputTorque);
 	HAL_StatusTypeDef setLimits(float velLimit, float currentSoftMax);

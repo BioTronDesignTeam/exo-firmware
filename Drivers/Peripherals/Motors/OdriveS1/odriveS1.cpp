@@ -12,6 +12,7 @@
 #include "stm32h7xx_hal_fdcan.h"
 #include "can_simple.hpp"
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 
@@ -228,26 +229,37 @@ void ODRIVES1::handleFrame(uint32_t identifier, const uint8_t* data) {
 	}
 }
 
-HAL_StatusTypeDef ODRIVES1::setAxisState(uint32_t requestedState) {
+HAL_StatusTypeDef ODRIVES1::setAxisState(AxisState requestedState) {
 	uint8_t txBuf[8] = {0};
-	std::memcpy(&txBuf[0], &requestedState, 4);
+	const uint32_t state = static_cast<uint32_t>(requestedState);
+	std::memcpy(&txBuf[0], &state, 4);
 
 	return this->sendMsgCAN(CMD_ID_SET_AXIS_STATE, false, txBuf);
 }
 
-HAL_StatusTypeDef ODRIVES1::setControllerMode(uint32_t controlMode, uint32_t inputMode) {
+HAL_StatusTypeDef ODRIVES1::setControllerMode(ControlMode controlMode, InputMode inputMode) {
 	uint8_t txBuf[8] = {0};
-	std::memcpy(txBuf, &controlMode, 4);
-	std::memcpy(&txBuf[4], &inputMode, 4);
+	const uint32_t control = static_cast<uint32_t>(controlMode);
+	const uint32_t input = static_cast<uint32_t>(inputMode);
+	std::memcpy(txBuf, &control, 4);
+	std::memcpy(&txBuf[4], &input, 4);
 
 	return this->sendMsgCAN(CMD_ID_SET_CONTROLLER_MODE, false, txBuf);
 }
 
-HAL_StatusTypeDef ODRIVES1::setInputPosition(float inputPos, int16_t inputVel, int16_t inputTorque) {
+// Set_Input_Pos sends feed-forwards as int16 in units of 0.001 rev/s and 0.001 Nm
+static int16_t toFeedForward(float value) {
+	const long scaled = std::lround(value * 1000.0f);
+	return static_cast<int16_t>(std::clamp<long>(scaled, INT16_MIN, INT16_MAX));
+}
+
+HAL_StatusTypeDef ODRIVES1::setInputPosition(float inputPos, float velocityFeedForward, float torqueFeedForward) {
 	uint8_t txBuf[8] = {0};
+	const int16_t velocity = toFeedForward(velocityFeedForward);
+	const int16_t torque = toFeedForward(torqueFeedForward);
 	std::memcpy(txBuf, &inputPos, 4);
-	std::memcpy(&txBuf[4], &inputVel, 2);
-	std::memcpy(&txBuf[6], &inputTorque, 2);
+	std::memcpy(&txBuf[4], &velocity, 2);
+	std::memcpy(&txBuf[6], &torque, 2);
 
 	return this->sendMsgCAN(CMD_ID_SET_INPUT_POSITION, false, txBuf);
 }

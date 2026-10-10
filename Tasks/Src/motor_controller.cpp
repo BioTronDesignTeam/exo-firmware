@@ -26,11 +26,11 @@ void motorControllerMainLoop(void *arg)
   {
 	  if (BSP_PB_GetState(BUTTON_USER) == BUTTON_PRESSED && HAL_GetTick() - time > 500) {
 		  if (isClosedLoop) {
-			  odriveS1Handle->setAxisState(0x1);
+			  odriveS1Handle->setAxisState(AxisState::Idle);
 			  isClosedLoop = false;
 		  }
 		  else {
-			  odriveS1Handle->setAxisState(0x8);
+			  odriveS1Handle->setAxisState(AxisState::ClosedLoopControl);
 			  osDelay(100);
 			  odriveS1Handle->setInputVelocity(-5, -0.5);
 			  time = HAL_GetTick();
@@ -44,7 +44,7 @@ void motorControllerMainLoop(void *arg)
 	  const odrive_can_heartbeat_t heartbeat = odriveS1Handle->read(odriveS1Handle->heartbeat);
 	  const odrive_can_bus_t bus = odriveS1Handle->read(odriveS1Handle->busVoltageCurrent);
 
-	  if (heartbeat.axisState == 0x8) {
+	  if (heartbeat.axisState == static_cast<uint8_t>(AxisState::ClosedLoopControl)) {
 		  BSP_LED_On(LED_RED);
 	  }
 	  else {
@@ -52,7 +52,7 @@ void motorControllerMainLoop(void *arg)
 	  }
 
 	  if (bus.busCurrent > 0.1) {
-		  odriveS1Handle->setAxisState(0x1);
+		  odriveS1Handle->setAxisState(AxisState::Idle);
 		  time = HAL_GetTick();
 		  isClosedLoop = false;
 		  BSP_LED_On(LED_YELLOW);
