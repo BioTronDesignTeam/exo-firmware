@@ -148,6 +148,10 @@ HAL_StatusTypeDef ODRIVES1::getPowers() {
 	return this->sendMsgCAN(CMD_ID_GET_POWERS, true);
 }
 
+HAL_StatusTypeDef ODRIVES1::estop() {
+	return this->sendMsgCAN(CMD_ID_ESTOP, false);
+}
+
 void ODRIVES1::handleFrame(uint32_t identifier, const uint8_t* data) {
 	switch (identifier & 0x1F) {
 		// The messages are encoded in little endian

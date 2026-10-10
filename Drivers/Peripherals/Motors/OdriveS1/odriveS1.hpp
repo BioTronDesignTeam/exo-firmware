@@ -77,6 +77,8 @@ public:
 	HAL_StatusTypeDef getTorques();
 	HAL_StatusTypeDef getPowers();
 
+	HAL_StatusTypeDef estop();
+
 	// TODO: Add proper parameters to following sections
 	// Setters
 	HAL_StatusTypeDef setAxisState(uint32_t requestedState);
