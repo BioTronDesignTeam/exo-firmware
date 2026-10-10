@@ -2,9 +2,13 @@
 #include "drivers.hpp"
 #include "uart.hpp"
 #include "imu.hpp"
+#include "safety.hpp"
 #include "task_priorities.hpp"
 
 static void startup(void* arg) {
+	if (!safety_init()) {
+		BSP_LED_On(LED_RED);
+	}
 	init_uart_tasks();
 	init_imu_tasks();
 	//motorControllerInitTask();

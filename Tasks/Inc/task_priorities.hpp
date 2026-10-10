@@ -5,6 +5,7 @@
 namespace TaskPriority {
 
 constexpr osPriority_t Startup = osPriorityRealtime7;
+constexpr osPriority_t Supervisor = osPriorityRealtime;
 constexpr osPriority_t MotorControl = osPriorityHigh;
 constexpr osPriority_t Imu = osPriorityAboveNormal;
 constexpr osPriority_t SerialRx = osPriorityNormal;
