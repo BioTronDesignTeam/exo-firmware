@@ -12,38 +12,78 @@
 #include "stm32h7xx_hal_fdcan.h"
 #include "can_simple.hpp"
 #include <algorithm>
+#include <cstdint>
 #include <cstring>
 
-ODRIVES1::ODRIVES1 (FDCAN_HandleTypeDef* fdcanhandle) : _can(fdcanhandle) {
-	// TODO: Add Error Handling
+ODRIVES1* ODRIVES1::instances[ODRIVES1::MAX_INSTANCES] = {nullptr};
+uint8_t ODRIVES1::instanceCount = 0;
+
+ODRIVES1::ODRIVES1 (FDCAN_HandleTypeDef* fdcanhandle, uint8_t nodeId) : _can(fdcanhandle), _nodeId(nodeId & 0x3F) {
+	bool canRegister = instanceCount < MAX_INSTANCES;
+	for (uint8_t i = 0; i < instanceCount; ++i) {
+		if (instances[i]->_can == this->_can && instances[i]->_nodeId == this->_nodeId) {
+			canRegister = false;
+		}
+	}
+	if (!canRegister) {
+		BSP_LED_On(LED_RED);
+		return;
+	}
+
 	// Configure Filter
 	this->odriveCanFilter.IdType = FDCAN_STANDARD_ID;
-	this->odriveCanFilter.FilterIndex = 0;
+	this->odriveCanFilter.FilterIndex = instanceCount;
 	// Set our filter to mask so it uses ID1 as a value and ID2 as mask
 	this->odriveCanFilter.FilterType = FDCAN_FILTER_MASK;
 	this->odriveCanFilter.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-	// Assume node_id of Odrive is 0
-	this->odriveCanFilter.FilterID1 = 0x000;
-	// Mask first five bits (16 bit mask, 11 bit CAN address)
-	this->odriveCanFilter.FilterID2 = 0b11111 << 10;
+	this->odriveCanFilter.FilterID1 = static_cast<uint32_t>(_nodeId) << 5;
+	this->odriveCanFilter.FilterID2 = 0x7E0;
 	this->odriveCanFilter.RxBufferIndex = 0;
 
 	if (HAL_FDCAN_ConfigFilter(this->_can, &this->odriveCanFilter) != HAL_OK) {
 		BSP_LED_On(LED_RED);
+		return;
 	}
 
-	if (HAL_FDCAN_Start(this->_can) != HAL_OK) {
-		BSP_LED_On(LED_RED);
+	instances[instanceCount] = this;
+	++instanceCount;
+}
+
+HAL_StatusTypeDef ODRIVES1::startBus(FDCAN_HandleTypeDef* fdcanhandle) {
+	if (HAL_FDCAN_ConfigGlobalFilter(fdcanhandle, FDCAN_REJECT, FDCAN_REJECT,
+	                                 FDCAN_REJECT_REMOTE, FDCAN_REJECT_REMOTE) != HAL_OK) {
+		return HAL_ERROR;
 	}
 
-	if (HAL_FDCAN_ActivateNotification(this->_can, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK) {
-		BSP_LED_On(LED_RED);
+	if (HAL_FDCAN_Start(fdcanhandle) != HAL_OK) {
+		return HAL_ERROR;
+	}
+
+	return HAL_FDCAN_ActivateNotification(fdcanhandle, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+}
+
+void ODRIVES1::handleRxFifo0(FDCAN_HandleTypeDef* fdcanhandle) {
+	while (HAL_FDCAN_GetRxFifoFillLevel(fdcanhandle, FDCAN_RX_FIFO0) > 0) {
+		FDCAN_RxHeaderTypeDef rxHeader;
+		uint8_t rxData[8] = {0};
+		if (HAL_FDCAN_GetRxMessage(fdcanhandle, FDCAN_RX_FIFO0, &rxHeader, rxData) != HAL_OK) {
+			BSP_LED_On(LED_RED);
+			return;
+		}
+
+		const uint8_t node = static_cast<uint8_t>(rxHeader.Identifier >> 5);
+		for (uint8_t i = 0; i < instanceCount; ++i) {
+			if (instances[i]->_can == fdcanhandle && instances[i]->_nodeId == node) {
+				instances[i]->handleFrame(rxHeader.Identifier, rxData);
+				break;
+			}
+		}
 	}
 }
 
 HAL_StatusTypeDef ODRIVES1::sendMsgCAN(uint32_t identifier, bool isRemote, const uint8_t* txBuffer) {
 	FDCAN_TxHeaderTypeDef txHeader;
-	txHeader.Identifier = identifier;
+	txHeader.Identifier = (static_cast<uint32_t>(_nodeId) << 5) | (identifier & 0x1F);
 	txHeader.IdType = FDCAN_STANDARD_ID;
 	if (isRemote) {
 		txHeader.TxFrameType = FDCAN_REMOTE_FRAME;
@@ -108,64 +148,62 @@ HAL_StatusTypeDef ODRIVES1::getPowers() {
 	return this->sendMsgCAN(CMD_ID_GET_POWERS, true);
 }
 
-HAL_StatusTypeDef ODRIVES1::responseCallback(uint32_t identifier) {
-	switch (identifier) {
+void ODRIVES1::handleFrame(uint32_t identifier, const uint8_t* data) {
+	switch (identifier & 0x1F) {
 		// The messages are encoded in little endian
 		case CMD_ID_GET_HEARTBEAT:
-			memcpy(&this->heartbeat.axisError, this->odriveRxBuffer, 4);
-			this->heartbeat.axisState = this->odriveRxBuffer[4];
-			this->heartbeat.procedureResult = this->odriveRxBuffer[5];
-			this->heartbeat.trajectoryDoneFlag = this->odriveRxBuffer[6];
+			memcpy(&this->heartbeat.axisError, data, 4);
+			this->heartbeat.axisState = data[4];
+			this->heartbeat.procedureResult = data[5];
+			this->heartbeat.trajectoryDoneFlag = data[6];
 			break;
 		case CMD_ID_GET_ERROR:
-			memcpy(&this->error.activeErrors, this->odriveRxBuffer, 4);
-			memcpy(&this->error.disarmReason, &this->odriveRxBuffer[4], 4);
+			memcpy(&this->error.activeErrors, data, 4);
+			memcpy(&this->error.disarmReason, &data[4], 4);
 			break;
 		case CMD_ID_GET_ENCODE_ESTIMATES:
-			memcpy(&this->encoderEstimates.positionEstimate, this->odriveRxBuffer, 4);
-			memcpy(&this->encoderEstimates.velocityEstimate, &this->odriveRxBuffer[4], 4);
+			memcpy(&this->encoderEstimates.positionEstimate, data, 4);
+			memcpy(&this->encoderEstimates.velocityEstimate, &data[4], 4);
 			break;
 		case CMD_ID_GET_BUS_VOLTAGE_CURRENT:
-			memcpy(&this->busVoltageCurrent.busVoltage, this->odriveRxBuffer, 4);
-			memcpy(&this->busVoltageCurrent.busCurrent, &this->odriveRxBuffer[4], 4);
+			memcpy(&this->busVoltageCurrent.busVoltage, data, 4);
+			memcpy(&this->busVoltageCurrent.busCurrent, &data[4], 4);
 			break;
 		case CMD_ID_GET_TORQUES:
-			memcpy(&this->torque.torqueTarget, this->odriveRxBuffer, 4);
-			memcpy(&this->torque.torqueEstimate, &this->odriveRxBuffer[4], 4);
+			memcpy(&this->torque.torqueTarget, data, 4);
+			memcpy(&this->torque.torqueEstimate, &data[4], 4);
 			break;
 		case CMD_ID_GET_VERSION:
-			this->version.protocolVersion = this->odriveRxBuffer[0];
-			this->version.hwVersionMajor = this->odriveRxBuffer[1];
-			this->version.hwVersionMinor = this->odriveRxBuffer[2];
-			this->version.hwVersionVariant = this->odriveRxBuffer[3];
-			this->version.fwVersionMajor = this->odriveRxBuffer[4];
-			this->version.fwVersionMinor = this->odriveRxBuffer[5];
-			this->version.fwVersionRevision = this->odriveRxBuffer[6];
-			this->version.fwVersionUnreleased = this->odriveRxBuffer[7];
+			this->version.protocolVersion = data[0];
+			this->version.hwVersionMajor = data[1];
+			this->version.hwVersionMinor = data[2];
+			this->version.hwVersionVariant = data[3];
+			this->version.fwVersionMajor = data[4];
+			this->version.fwVersionMinor = data[5];
+			this->version.fwVersionRevision = data[6];
+			this->version.fwVersionUnreleased = data[7];
 			break;
 		case CMD_ID_MODIFY_PARAMETERS_RESPONSE:
 			// TODO
 			break;
 		case CMD_ID_GET_ADDRESS:
-			this->address.nodeID = this->odriveRxBuffer[0];
-			memcpy((uint8_t *)&this->address.serialNumber + 2, &this->odriveRxBuffer[1], 6);
-			this->address.connectionID = this->odriveRxBuffer[7];
+			this->address.nodeID = data[0];
+			memcpy((uint8_t *)&this->address.serialNumber + 2, &data[1], 6);
+			this->address.connectionID = data[7];
 			break;
 		case CMD_ID_GET_IQ:
-			memcpy(&this->iq.iqSetpoint, this->odriveRxBuffer, 4);
-			memcpy(&this->iq.iqMeasured, &this->odriveRxBuffer[4], 4);
+			memcpy(&this->iq.iqSetpoint, data, 4);
+			memcpy(&this->iq.iqMeasured, &data[4], 4);
 			break;
 		case CMD_ID_GET_TEMPERATURE:
-			memcpy(&this->temperature.FETTemperature, this->odriveRxBuffer, 4);
-			memcpy(&this->temperature.motorTemperature, &this->odriveRxBuffer[4], 4);
+			memcpy(&this->temperature.FETTemperature, data, 4);
+			memcpy(&this->temperature.motorTemperature, &data[4], 4);
 			break;
 		case CMD_ID_GET_POWERS:
-			memcpy(&this->power.electricalPower, this->odriveRxBuffer, 4);
-			memcpy(&this->power.mechanicalPower, &this->odriveRxBuffer[4], 4);
+			memcpy(&this->power.electricalPower, data, 4);
+			memcpy(&this->power.mechanicalPower, &data[4], 4);
 			break;
 	}
-
-	return HAL_OK;
 }
 
 HAL_StatusTypeDef ODRIVES1::setAxisState(uint32_t requestedState) {

@@ -41,21 +41,24 @@ void motorControllerMainLoop(void *arg)
 		  time = HAL_GetTick();
 	  }
 
-	  if (odriveS1Handle->heartbeat.axisState == 0x8) {
+	  const odrive_can_heartbeat_t heartbeat = odriveS1Handle->read(odriveS1Handle->heartbeat);
+	  const odrive_can_bus_t bus = odriveS1Handle->read(odriveS1Handle->busVoltageCurrent);
+
+	  if (heartbeat.axisState == 0x8) {
 		  BSP_LED_On(LED_RED);
 	  }
 	  else {
 		  BSP_LED_Off(LED_RED);
 	  }
 
-	  if (odriveS1Handle->busVoltageCurrent.busCurrent > 0.1) {
+	  if (bus.busCurrent > 0.1) {
 		  odriveS1Handle->setAxisState(0x1);
 		  time = HAL_GetTick();
 		  isClosedLoop = false;
 		  BSP_LED_On(LED_YELLOW);
 	  }
 
-	  printf("Current: %f \r\n", odriveS1Handle->busVoltageCurrent.busCurrent);
+	  printf("Current: %f \r\n", bus.busCurrent);
 	  BSP_LED_Toggle(LED_GREEN);
 	  osDelay(50);
   }
