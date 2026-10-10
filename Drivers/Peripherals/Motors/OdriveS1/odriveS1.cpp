@@ -250,7 +250,7 @@ HAL_StatusTypeDef ODRIVES1::setControllerMode(ControlMode controlMode, InputMode
 // Set_Input_Pos sends feed-forwards as int16 in units of 0.001 rev/s and 0.001 Nm
 static int16_t toFeedForward(float value) {
 	const long scaled = std::lround(value * 1000.0f);
-	return static_cast<int16_t>(std::clamp<long>(scaled, INT16_MIN, INT16_MAX));
+	return static_cast<int16_t>(std::max<long>(INT16_MIN, std::min<long>(scaled, INT16_MAX)));
 }
 
 HAL_StatusTypeDef ODRIVES1::setInputPosition(float inputPos, float velocityFeedForward, float torqueFeedForward) {
