@@ -24,7 +24,6 @@
 /* USER CODE BEGIN Includes */
 //linker will look for initTasks in all other .o files, so no need to #include general_thread or drivers
 void initTasks(void);
-void initDrivers(void);
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -149,8 +148,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
 
-  initTasks(); //create task to forward queue to esp through uart
-  initDrivers(); 
+  initTasks();
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
