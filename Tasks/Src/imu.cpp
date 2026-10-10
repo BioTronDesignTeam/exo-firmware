@@ -2,6 +2,7 @@
 #include "drivers.hpp"
 #include "uart.hpp"
 #include <cmsis_os2.h>
+#include "task_priorities.hpp"
 #include <string.h>
 #include <stdio.h>
 
@@ -112,14 +113,14 @@ void init_imu_tasks() {
     static const osThreadAttr_t updateMSA311Attributes = {
         .name = "UpdateMSA311",
         .stack_size = 1024,
-        .priority = (osPriority_t) osPriorityNormal
+        .priority = TaskPriority::Diagnostics
     };
     updateMSA311Handle = osThreadNew(update_msa311, NULL, &updateMSA311Attributes);
 
     static const osThreadAttr_t updateBNO085Attributes = {
         .name = "UpdateBNO085",
         .stack_size = 2048,
-        .priority = (osPriority_t) osPriorityAboveNormal
+        .priority = TaskPriority::Imu
     };
     updateBNO085Handle = osThreadNew(update_bno085, NULL, &updateBNO085Attributes);
 }

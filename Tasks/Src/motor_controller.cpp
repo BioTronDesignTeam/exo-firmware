@@ -1,6 +1,7 @@
 #include "motor_controller.hpp"
 #include "stm32h7xx_hal_fdcan.h"
 #include "uart.hpp"
+#include "task_priorities.hpp"
 #include <stdio.h>
 
 extern FDCAN_HandleTypeDef hfdcan1;
@@ -10,7 +11,7 @@ osThreadId_t motorControllerTaskHandle;
 static const osThreadAttr_t motorController_attributes = {
     .name = "MotorController",
     .stack_size = 1024,
-    .priority = (osPriority_t) osPriorityNormal
+    .priority = TaskPriority::MotorControl
 };
 
 void motorControllerMainLoop(void *arg)
