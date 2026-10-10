@@ -9,7 +9,6 @@ extern "C" {
 
 
 void initTasks();
-void initDrivers();
 
 #ifdef __cplusplus
 }
