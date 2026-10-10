@@ -5,7 +5,11 @@
 extern "C" {
 #include "cmsis_os2.h"
 #include "main.h"
+#include "FreeRTOS.h"
+#include "stream_buffer.h"
 }
+
+#include "task_priorities.hpp"
 
 namespace {
 
@@ -13,6 +17,9 @@ constexpr uint8_t kMagicFirst = 0xAA;
 constexpr uint8_t kMagicSecond = 0x55;
 constexpr uint16_t kFrameOverhead = 7;
 constexpr uint8_t kTxQueueDepth = 8;
+constexpr size_t kRxStreamSize = 512;
+constexpr uint32_t kTxTimeoutMs = 100;
+constexpr uint32_t kUartIrqPriority = 6;
 
 struct serial_tx_message_t {
     SerialPacketType type;
@@ -32,6 +39,9 @@ enum class ParserState : uint8_t {
 };
 
 osMessageQueueId_t serial_tx_queue = nullptr;
+osSemaphoreId_t serial_tx_done = nullptr;
+StreamBufferHandle_t serial_rx_stream = nullptr;
+uint8_t serial_rx_byte = 0;
 
 uint16_t crc16_ccitt_false(const uint8_t* data, size_t length)
 {
@@ -60,7 +70,20 @@ bool transmit_frame(const serial_tx_message_t& message)
     frame[5 + message.length] = static_cast<uint8_t>(crc);
     frame[6 + message.length] = static_cast<uint8_t>(crc >> 8);
 
-    return HAL_UART_Transmit(&hcom_uart[COM1], frame, kFrameOverhead + message.length, 100) == HAL_OK;
+    (void)osSemaphoreAcquire(serial_tx_done, 0);
+    if (HAL_UART_Transmit_IT(&hcom_uart[COM1], frame, kFrameOverhead + message.length) != HAL_OK) {
+        return false;
+    }
+    if (osSemaphoreAcquire(serial_tx_done, kTxTimeoutMs) != osOK) {
+        (void)HAL_UART_AbortTransmit(&hcom_uart[COM1]);
+        return false;
+    }
+    return true;
+}
+
+void start_receive()
+{
+    (void)HAL_UART_Receive_IT(&hcom_uart[COM1], &serial_rx_byte, 1);
 }
 
 class SerialParser {
@@ -149,31 +172,58 @@ private:
     uint8_t payload_[SERIAL_PROTOCOL_MAX_PAYLOAD] = {};
 };
 
-void serial_protocol_task(void*)
+void serial_rx_task(void*)
 {
     SerialParser parser;
+    start_receive();
 
     for (;;) {
-        bool did_work = false;
-        uint8_t byte = 0;
-        if (HAL_UART_Receive(&hcom_uart[COM1], &byte, 1, 2) == HAL_OK) {
-            parser.consume(byte);
-            did_work = true;
+        uint8_t bytes[32];
+        const size_t count = xStreamBufferReceive(serial_rx_stream, bytes, sizeof(bytes), portMAX_DELAY);
+        for (size_t i = 0; i < count; ++i) {
+            parser.consume(bytes[i]);
         }
+    }
+}
 
+void serial_tx_task(void*)
+{
+    for (;;) {
         serial_tx_message_t message{};
-        if (osMessageQueueGet(serial_tx_queue, &message, nullptr, 0) == osOK) {
+        if (osMessageQueueGet(serial_tx_queue, &message, nullptr, osWaitForever) == osOK) {
             (void)transmit_frame(message);
-            did_work = true;
-        }
-
-        if (!did_work) {
-            osDelay(1);
         }
     }
 }
 
 } // namespace
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart)
+{
+    if (huart != &hcom_uart[COM1]) {
+        return;
+    }
+
+    BaseType_t woken = pdFALSE;
+    (void)xStreamBufferSendFromISR(serial_rx_stream, &serial_rx_byte, 1, &woken);
+    start_receive();
+    portYIELD_FROM_ISR(woken);
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef* huart)
+{
+    if (huart == &hcom_uart[COM1]) {
+        (void)osSemaphoreRelease(serial_tx_done);
+    }
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart)
+{
+    // Overrun and similar errors end the IT reception; restart it
+    if (huart == &hcom_uart[COM1] && huart->RxState == HAL_UART_STATE_READY) {
+        start_receive();
+    }
+}
 
 bool serial_protocol_init()
 {
@@ -182,7 +232,9 @@ bool serial_protocol_init()
     }
 
     serial_tx_queue = osMessageQueueNew(kTxQueueDepth, sizeof(serial_tx_message_t), nullptr);
-    if (serial_tx_queue == nullptr) {
+    serial_tx_done = osSemaphoreNew(1, 0, nullptr);
+    serial_rx_stream = xStreamBufferCreate(kRxStreamSize, 1);
+    if (serial_tx_queue == nullptr || serial_tx_done == nullptr || serial_rx_stream == nullptr) {
         return false;
     }
     if (HAL_UARTEx_SetRxFifoThreshold(&hcom_uart[COM1], UART_RXFIFO_THRESHOLD_1_8) != HAL_OK ||
@@ -191,12 +243,21 @@ bool serial_protocol_init()
         return false;
     }
 
-    static const osThreadAttr_t attributes = {
-        .name = "SerialProtocol",
-        .stack_size = 2048,
-        .priority = osPriorityNormal,
+    HAL_NVIC_SetPriority(USART3_IRQn, kUartIrqPriority, 0);
+    HAL_NVIC_EnableIRQ(USART3_IRQn);
+
+    static const osThreadAttr_t rx_attributes = {
+        .name = "SerialRx",
+        .stack_size = 1536,
+        .priority = TaskPriority::SerialRx,
     };
-    return osThreadNew(serial_protocol_task, nullptr, &attributes) != nullptr;
+    static const osThreadAttr_t tx_attributes = {
+        .name = "SerialTx",
+        .stack_size = 1536,
+        .priority = TaskPriority::SerialTx,
+    };
+    return osThreadNew(serial_rx_task, nullptr, &rx_attributes) != nullptr &&
+           osThreadNew(serial_tx_task, nullptr, &tx_attributes) != nullptr;
 }
 
 bool send_serial_packet(SerialPacketType type, const void* payload, uint16_t length)

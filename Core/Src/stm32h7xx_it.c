@@ -217,5 +217,8 @@ void TIM7_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-
+void USART3_IRQHandler(void)
+{
+  HAL_UART_IRQHandler(&hcom_uart[COM1]);
+}
 /* USER CODE END 1 */
