@@ -184,11 +184,13 @@ void ODRIVES1::handleFrame(uint32_t identifier, const uint8_t* data) {
 			this->version.fwVersionUnreleased = data[7];
 			break;
 		case CMD_ID_MODIFY_PARAMETERS_RESPONSE:
-			// TODO
+			memcpy(&this->latestEndpointChange.endpointId, &data[1], 2);
+			memcpy(&this->latestEndpointChange.value, &data[4], 4);
 			break;
 		case CMD_ID_GET_ADDRESS:
 			this->address.nodeID = data[0];
-			memcpy((uint8_t *)&this->address.serialNumber + 2, &data[1], 6);
+			this->address.serialNumber = 0;
+			memcpy(&this->address.serialNumber, &data[1], 6);
 			this->address.connectionID = data[7];
 			break;
 		case CMD_ID_GET_IQ:
@@ -301,7 +303,7 @@ HAL_StatusTypeDef ODRIVES1::modifyParameter(OpCode opCode, uint16_t endpointID, 
 	uint8_t txBuf[8] = {0};
 	txBuf[0] = static_cast<uint8_t>(opCode);
 	std::memcpy(&txBuf[1], &endpointID, 2);
-	std::memcpy(&txBuf[3], &value, 4);
+	std::memcpy(&txBuf[4], &value, 4);
 
 	return this->sendMsgCAN(CMD_ID_MODIFY_PARAMETERS, false, txBuf);
 }
