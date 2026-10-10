@@ -117,6 +117,7 @@ HAL_StatusTypeDef ODRIVES1::sendMsgCAN(uint32_t identifier, bool isRemote, const
 
 	// Add bytes to queue to be sent
 	if (HAL_FDCAN_AddMessageToTxFifoQ(this->_can, &txHeader, const_cast<uint8_t*>(dataPtr)) != HAL_OK) {
+		++txErrors;
 		return HAL_ERROR;
 	}
 
