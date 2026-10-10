@@ -122,8 +122,13 @@ HAL_StatusTypeDef ODRIVES1::sendMsgCAN(uint32_t identifier, bool isRemote, const
 	uint8_t dummyBuffer[8] = {0};
 	const uint8_t* dataPtr = txBuffer ? txBuffer : dummyBuffer;
 
-	// Add bytes to queue to be sent
-	if (HAL_FDCAN_AddMessageToTxFifoQ(this->_can, &txHeader, const_cast<uint8_t*>(dataPtr)) != HAL_OK) {
+	// Add bytes to queue to be sent; tasks of different priorities share the TX FIFO
+	taskENTER_CRITICAL();
+	const HAL_StatusTypeDef status =
+		HAL_FDCAN_AddMessageToTxFifoQ(this->_can, &txHeader, const_cast<uint8_t*>(dataPtr));
+	taskEXIT_CRITICAL();
+
+	if (status != HAL_OK) {
 		++txErrors;
 		return HAL_ERROR;
 	}
@@ -175,10 +180,25 @@ HAL_StatusTypeDef ODRIVES1::estop() {
 	return this->sendMsgCAN(CMD_ID_ESTOP, false);
 }
 
+void ODRIVES1::estopAll() {
+	for (uint8_t i = 0; i < instanceCount; ++i) {
+		(void)instances[i]->estop();
+	}
+}
+
+uint32_t ODRIVES1::heartbeatAgeMs() const {
+	if (!_heartbeatSeen) {
+		return UINT32_MAX;
+	}
+	return HAL_GetTick() - _lastHeartbeatMs;
+}
+
 void ODRIVES1::handleFrame(uint32_t identifier, const uint8_t* data) {
 	switch (identifier & 0x1F) {
 		// The messages are encoded in little endian
 		case CMD_ID_GET_HEARTBEAT:
+			_lastHeartbeatMs = HAL_GetTick();
+			_heartbeatSeen = true;
 			memcpy(&this->heartbeat.axisError, data, 4);
 			this->heartbeat.axisState = data[4];
 			this->heartbeat.procedureResult = data[5];

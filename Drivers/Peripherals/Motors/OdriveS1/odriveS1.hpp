@@ -28,6 +28,8 @@ private:
 	FDCAN_HandleTypeDef* _can;
 	uint8_t _nodeId; // Must match axis0.config.can.node_id
 	FDCAN_FilterTypeDef odriveCanFilter;
+	volatile uint32_t _lastHeartbeatMs = 0;
+	volatile bool _heartbeatSeen = false;
 
 	static ODRIVES1* instances[MAX_INSTANCES];
 	static uint8_t instanceCount;
@@ -59,8 +61,10 @@ public:
 
 	static void handleRxFifo0(FDCAN_HandleTypeDef* fdcanhandle);
 	static void recoverBusOff(FDCAN_HandleTypeDef* fdcanhandle);
+	static void estopAll();
 
 	uint8_t nodeId() const { return _nodeId; }
+	uint32_t heartbeatAgeMs() const;
 
 	template <typename T>
 	T read(const T& field) const {
