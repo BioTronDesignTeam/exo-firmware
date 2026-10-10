@@ -13,9 +13,6 @@ extern "C" {
 void update_msa311(void *arg) {
     char buf[64];
     for ( ;; ) {
-        SERIAL_PRINT("Updating MSA311\r\n");
-        BSP_LED_Toggle(LED_YELLOW);
-
         if (MSA311Handle != nullptr) {
             if (MSA311Handle->getAccel() == HAL_OK) {
                 const msa311_accel_t accel = MSA311Handle->getAccelData();
