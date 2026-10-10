@@ -13,29 +13,42 @@
 #include "stm32h7xx_hal_fdcan.h"
 #include "can_simple.hpp"
 
+#ifndef ODRIVE_CAN_NODE_ID
+#define ODRIVE_CAN_NODE_ID 0
+#endif
+static_assert(ODRIVE_CAN_NODE_ID >= 0 && ODRIVE_CAN_NODE_ID < 63,
+              "ODrive node ID must be 0-62; 63 is the broadcast address");
+
 class ODRIVES1 {
 private:
 	FDCAN_HandleTypeDef* _can;
-	FDCAN_FilterTypeDef odriveCanFilter;
+	FDCAN_FilterTypeDef odriveCanFilter{};
+    bool _initialized = false;
+    volatile bool _heartbeatReceived = false;
+    volatile uint32_t _heartbeatTick = 0;
 
 public:
 	// Internal States
-	uint8_t odriveRxBuffer[FDCAN_DLC_BYTES_8] = {0};
-	FDCAN_RxHeaderTypeDef odriveCanRxHeader= {0};
-	odrive_can_version_t version = {0};
-	odrive_can_heartbeat_t heartbeat = {0};
-	odrive_can_error_t error = {0};
-	odrive_can_address_t address = {0};
-	odrive_can_encoder_estimates_t encoderEstimates = {0};
-	odrive_can_iq_t iq = {0};
-	odrive_can_temperature_t temperature = {0};
-	odrive_can_bus_t busVoltageCurrent = {0};
-	odrive_can_torque_t torque = {0};
-	odrive_can_power_t power = {0};
-	odrive_can_txSdo_t latestEndpointChange = {0};
+	uint8_t odriveRxBuffer[FDCAN_DLC_BYTES_8] = {};
+	FDCAN_RxHeaderTypeDef odriveCanRxHeader= {};
+	odrive_can_version_t version = {};
+	odrive_can_heartbeat_t heartbeat = {};
+	odrive_can_error_t error = {};
+	odrive_can_address_t address = {};
+	odrive_can_encoder_estimates_t encoderEstimates = {};
+	odrive_can_iq_t iq = {};
+	odrive_can_temperature_t temperature = {};
+	odrive_can_bus_t busVoltageCurrent = {};
+	odrive_can_torque_t torque = {};
+	odrive_can_power_t power = {};
+	odrive_can_txSdo_t latestEndpointChange = {};
 
 
 	ODRIVES1 (FDCAN_HandleTypeDef* fdcanhandle);
+
+	bool isInitialized() const { return _initialized; }
+    // Copy ISR-updated heartbeat and timestamp together.
+    bool heartbeatSnapshot(odrive_can_heartbeat_t& status, uint32_t& tick) const;
 
 	// CAN send function
 	HAL_StatusTypeDef sendMsgCAN(uint32_t identifier, bool isRemote, const uint8_t* txBuffer = nullptr);

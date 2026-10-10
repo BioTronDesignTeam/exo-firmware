@@ -15,35 +15,50 @@
 #include <cstring>
 
 ODRIVES1::ODRIVES1 (FDCAN_HandleTypeDef* fdcanhandle) : _can(fdcanhandle) {
-	// TODO: Add Error Handling
 	// Configure Filter
 	this->odriveCanFilter.IdType = FDCAN_STANDARD_ID;
 	this->odriveCanFilter.FilterIndex = 0;
 	// Set our filter to mask so it uses ID1 as a value and ID2 as mask
 	this->odriveCanFilter.FilterType = FDCAN_FILTER_MASK;
 	this->odriveCanFilter.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
-	// Assume node_id of Odrive is 0
-	this->odriveCanFilter.FilterID1 = 0x000;
-	// Mask first five bits (16 bit mask, 11 bit CAN address)
-	this->odriveCanFilter.FilterID2 = 0b11111 << 10;
+	// CANSimple: six node bits followed by five command bits.
+    this->odriveCanFilter.FilterID1 = ODRIVE_CAN_NODE_ID << 5;
+    this->odriveCanFilter.FilterID2 = 0x7E0;
 	this->odriveCanFilter.RxBufferIndex = 0;
 
 	if (HAL_FDCAN_ConfigFilter(this->_can, &this->odriveCanFilter) != HAL_OK) {
 		BSP_LED_On(LED_RED);
+        return;
 	}
 
 	if (HAL_FDCAN_Start(this->_can) != HAL_OK) {
 		BSP_LED_On(LED_RED);
+        return;
 	}
 
 	if (HAL_FDCAN_ActivateNotification(this->_can, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK) {
 		BSP_LED_On(LED_RED);
+        return;
 	}
+    _initialized = true;
+}
+
+bool ODRIVES1::heartbeatSnapshot(odrive_can_heartbeat_t& status, uint32_t& tick) const {
+    const uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    status = heartbeat;
+    tick = _heartbeatTick;
+    const bool received = _heartbeatReceived;
+    __set_PRIMASK(primask);
+    return received;
 }
 
 HAL_StatusTypeDef ODRIVES1::sendMsgCAN(uint32_t identifier, bool isRemote, const uint8_t* txBuffer) {
-	FDCAN_TxHeaderTypeDef txHeader;
-	txHeader.Identifier = identifier;
+	if (!_initialized || identifier > 0x1F) {
+        return HAL_ERROR;
+    }
+    FDCAN_TxHeaderTypeDef txHeader{};
+    txHeader.Identifier = (ODRIVE_CAN_NODE_ID << 5) | identifier;
 	txHeader.IdType = FDCAN_STANDARD_ID;
 	if (isRemote) {
 		txHeader.TxFrameType = FDCAN_REMOTE_FRAME;
@@ -109,13 +124,27 @@ HAL_StatusTypeDef ODRIVES1::getPowers() {
 }
 
 HAL_StatusTypeDef ODRIVES1::responseCallback(uint32_t identifier) {
-	switch (identifier) {
+// Reject unrelated, remote, and short frames before parsing the shared buffer.
+    if (odriveCanRxHeader.IdType != FDCAN_STANDARD_ID ||
+        odriveCanRxHeader.RxFrameType != FDCAN_DATA_FRAME ||
+        (identifier >> 5) != ODRIVE_CAN_NODE_ID) {
+        return HAL_ERROR;
+    }
+    const uint32_t command = identifier & 0x1F;
+    const uint32_t minimumLength = command == CMD_ID_GET_HEARTBEAT ? 7 : 8;
+    if (odriveCanRxHeader.DataLength < minimumLength ||
+        odriveCanRxHeader.DataLength > FDCAN_DLC_BYTES_8) {
+        return HAL_ERROR;
+    }
+	switch (command) {
 		// The messages are encoded in little endian
 		case CMD_ID_GET_HEARTBEAT:
 			memcpy(&this->heartbeat.axisError, this->odriveRxBuffer, 4);
 			this->heartbeat.axisState = this->odriveRxBuffer[4];
 			this->heartbeat.procedureResult = this->odriveRxBuffer[5];
 			this->heartbeat.trajectoryDoneFlag = this->odriveRxBuffer[6];
+            _heartbeatTick = HAL_GetTick();
+            _heartbeatReceived = true;
 			break;
 		case CMD_ID_GET_ERROR:
 			memcpy(&this->error.activeErrors, this->odriveRxBuffer, 4);

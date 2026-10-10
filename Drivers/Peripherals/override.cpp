@@ -26,14 +26,17 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 
   if ((RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE) != RESET)
   {
-    /* Retrieve Rx messages from RX FIFO0 */
-    if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &odriveS1Handle->odriveCanRxHeader, odriveS1Handle->odriveRxBuffer) == HAL_OK)
+    // Drain the FIFO so bursts of encoder feedback cannot hide heartbeats.
+    while (HAL_FDCAN_GetRxFifoFillLevel(hfdcan, FDCAN_RX_FIFO0) > 0)
     {
-      odriveS1Handle->responseCallback(odriveS1Handle->odriveCanRxHeader.Identifier);
-    }
-    else
-    {
-      BSP_LED_On(LED_RED);
+      if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0,
+                               &odriveS1Handle->odriveCanRxHeader,
+                               odriveS1Handle->odriveRxBuffer) != HAL_OK)
+      {
+        BSP_LED_On(LED_RED);
+        break;
+      }
+      (void)odriveS1Handle->responseCallback(odriveS1Handle->odriveCanRxHeader.Identifier);
     }
 
     if (HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0) != HAL_OK)
