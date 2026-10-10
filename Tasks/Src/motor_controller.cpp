@@ -1,5 +1,6 @@
 #include "motor_controller.hpp"
 #include "stm32h7xx_hal_fdcan.h"
+#include "uart.hpp"
 #include <stdio.h>
 
 extern FDCAN_HandleTypeDef hfdcan1;
@@ -21,6 +22,7 @@ void motorControllerMainLoop(void *arg)
   }
 
   uint32_t time = HAL_GetTick();
+  uint32_t lastLogMs = 0;
   odriveS1Handle->getCANAddress();
   while(true)
   {
@@ -58,7 +60,12 @@ void motorControllerMainLoop(void *arg)
 		  BSP_LED_On(LED_YELLOW);
 	  }
 
-	  printf("Current: %f \r\n", bus.busCurrent);
+	  if (HAL_GetTick() - lastLogMs >= 1000U) {
+		  lastLogMs = HAL_GetTick();
+		  char buffer[48];
+		  snprintf(buffer, sizeof(buffer), "Current: %.3f\r\n", bus.busCurrent);
+		  SERIAL_PRINT(buffer);
+	  }
 	  BSP_LED_Toggle(LED_GREEN);
 	  osDelay(50);
   }
