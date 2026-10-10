@@ -13,9 +13,6 @@ extern "C" {
 void update_msa311(void *arg) {
     char buf[64];
     for ( ;; ) {
-        SERIAL_PRINT("Updating MSA311\r\n");
-        BSP_LED_Toggle(LED_YELLOW);
-
         if (MSA311Handle != nullptr) {
             if (MSA311Handle->getAccel() == HAL_OK) {
                 const msa311_accel_t accel = MSA311Handle->getAccelData();
@@ -107,20 +104,17 @@ static void update_bno085(void *arg) {
 }
 
 void init_imu_tasks() {
-    osThreadId_t updateMSA311Handle;
-    osThreadId_t updateBNO085Handle;
-
     static const osThreadAttr_t updateMSA311Attributes = {
         .name = "UpdateMSA311",
         .stack_size = 1024,
         .priority = TaskPriority::Diagnostics
     };
-    updateMSA311Handle = osThreadNew(update_msa311, NULL, &updateMSA311Attributes);
+    osThreadNew(update_msa311, NULL, &updateMSA311Attributes);
 
     static const osThreadAttr_t updateBNO085Attributes = {
         .name = "UpdateBNO085",
         .stack_size = 2048,
         .priority = TaskPriority::Imu
     };
-    updateBNO085Handle = osThreadNew(update_bno085, NULL, &updateBNO085Attributes);
+    osThreadNew(update_bno085, NULL, &updateBNO085Attributes);
 }

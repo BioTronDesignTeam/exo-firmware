@@ -29,6 +29,48 @@ The ST-LINK provides both:
 | `upload.cmd` / `upload.ps1` | Windows flash and reset; optional native build with `-Build`.              |
 | `tools/exo_serial_host.py` | Decodes telemetry/log packets and checks ping acknowledgements.           |
 
+## Firmware architecture
+
+`main()` creates a high-priority startup task, which runs once the scheduler
+starts and creates the tasks below. Priorities live in
+`Tasks/Inc/task_priorities.hpp`.
+
+| Task              | Priority      | Role                                                        |
+| ----------------- | ------------- | ----------------------------------------------------------- |
+| `Supervisor`      | Realtime      | Feeds the hardware watchdog while monitored tasks check in. |
+| `MotorController` | High          | Motor state machine at 100 Hz (not started by default).     |
+| `UpdateBNO085`    | AboveNormal   | Reads BNO085 rotation vectors over interrupt-driven I2C.    |
+| `SerialRx`        | Normal        | Parses host frames fed by the USART3 RX interrupt.          |
+| `SerialTx`        | Normal        | Sends queued frames with interrupt-driven TX.               |
+| `InitializeDriver`| Normal        | Constructs the drivers, starts CAN, then exits.             |
+| `SerialTelemetry` | BelowNormal   | Sends a telemetry frame every 200 ms.                       |
+| `UpdateMSA311`    | Low           | Reads and logs the MSA311 every 2 s when its driver exists. |
+
+### Safety
+
+- `Supervisor` refreshes IWDG1 (500 ms) only while every registered task
+  checks in within its deadline. On a stall it sends an ODrive estop and lets
+  the watchdog reset the MCU. The watchdog is frozen while the debugger halts
+  the core.
+- `MotorController` arms only on a USER button press with a live ODrive
+  heartbeat (300 ms) and host link (2 s since the last valid frame, so keep
+  `exo_serial_host.py` pinging). While running it sends an estop and latches a
+  fault on link loss, axis errors, leaving closed loop, bus over-current,
+  over-speed, or repeated CAN TX failures. Press the button again to clear a
+  fault once the links are healthy.
+- The current and speed limits in `motor_controller.cpp` match the bench demo.
+  Set them for the real joints before wearing the device.
+- Also enable the ODrive's own watchdog (`axis0.config.enable_watchdog`,
+  `watchdog_timeout`) so it disarms if the STM32 stops sending setpoints.
+
+### CAN
+
+FDCAN1 runs classic CAN at 500 kbit/s from a 120 MHz kernel clock.
+`ODRIVES1::startBus()` refuses to start if that clock changes. Each ODrive's
+`node_id` must match the value passed to its `ODRIVES1` constructor in
+`drivers.cpp`; up to four ODrives are supported. The driver recovers from
+bus-off and counts `busOffEvents`, `rxFramesLost`, and per-ODrive `txErrors`.
+
 ## Development container setup
 
 ### VS Code
@@ -157,6 +199,12 @@ Existing Projects into Workspace**, selecting the repository root. Open
 
 Use CubeIDE/CubeMX for hardware configuration and code generation; use CMake
 and the platform's upload script for normal builds and flashing.
+
+> **Warning:** the clock tree in `exo-firmware.ioc` is out of date. `main.c`
+> runs the CPU at 480 MHz with a 120 MHz FDCAN clock, but the `.ioc` still
+> describes a 64 MHz tree. Update the clock configuration in CubeMX to match
+> `SystemClock_Config()` before generating code, or generation will change the
+> system clock and CAN will refuse to start.
 
 Before generating code:
 
