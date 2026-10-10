@@ -45,12 +45,16 @@ public:
 	odrive_can_power_t power = {0};
 	odrive_can_txSdo_t latestEndpointChange = {0};
 
+	static volatile uint32_t busOffEvents;
+	static volatile uint32_t rxFramesLost;
+
 
 	ODRIVES1 (FDCAN_HandleTypeDef* fdcanhandle, uint8_t nodeId);
 
 	static HAL_StatusTypeDef startBus(FDCAN_HandleTypeDef* fdcanhandle);
 
 	static void handleRxFifo0(FDCAN_HandleTypeDef* fdcanhandle);
+	static void recoverBusOff(FDCAN_HandleTypeDef* fdcanhandle);
 
 	uint8_t nodeId() const { return _nodeId; }
 

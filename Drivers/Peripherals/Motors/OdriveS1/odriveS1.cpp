@@ -17,6 +17,8 @@
 
 ODRIVES1* ODRIVES1::instances[ODRIVES1::MAX_INSTANCES] = {nullptr};
 uint8_t ODRIVES1::instanceCount = 0;
+volatile uint32_t ODRIVES1::busOffEvents = 0;
+volatile uint32_t ODRIVES1::rxFramesLost = 0;
 
 ODRIVES1::ODRIVES1 (FDCAN_HandleTypeDef* fdcanhandle, uint8_t nodeId) : _can(fdcanhandle), _nodeId(nodeId & 0x3F) {
 	bool canRegister = instanceCount < MAX_INSTANCES;
@@ -59,7 +61,20 @@ HAL_StatusTypeDef ODRIVES1::startBus(FDCAN_HandleTypeDef* fdcanhandle) {
 		return HAL_ERROR;
 	}
 
-	return HAL_FDCAN_ActivateNotification(fdcanhandle, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
+	return HAL_FDCAN_ActivateNotification(fdcanhandle,
+	                                      FDCAN_IT_RX_FIFO0_NEW_MESSAGE | FDCAN_IT_RX_FIFO0_MESSAGE_LOST |
+	                                      FDCAN_IT_BUS_OFF, 0);
+}
+
+void ODRIVES1::recoverBusOff(FDCAN_HandleTypeDef* fdcanhandle) {
+	FDCAN_ProtocolStatusTypeDef status;
+	if (HAL_FDCAN_GetProtocolStatus(fdcanhandle, &status) != HAL_OK || status.BusOff == 0U) {
+		return;
+	}
+
+	++busOffEvents;
+	// Leaving INIT starts the bus-off recovery sequence (129 x 11 recessive bits)
+	CLEAR_BIT(fdcanhandle->Instance->CCCR, FDCAN_CCCR_INIT);
 }
 
 void ODRIVES1::handleRxFifo0(FDCAN_HandleTypeDef* fdcanhandle) {
