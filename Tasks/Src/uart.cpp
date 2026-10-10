@@ -1,6 +1,7 @@
 #include "uart.hpp"
 #include <cmsis_os2.h>
 #include "drivers.hpp"
+#include "task_priorities.hpp"
 
 namespace {
 
@@ -77,7 +78,7 @@ void init_uart_tasks()
     static const osThreadAttr_t telemetry_attributes = {
         .name = "SerialTelemetry",
         .stack_size = 1024,
-        .priority = osPriorityNormal,
+        .priority = TaskPriority::Telemetry,
     };
     (void)osThreadNew(send_telemetry_to_host, nullptr, &telemetry_attributes);
 }

@@ -2,6 +2,7 @@
 #include "drivers.hpp"
 #include "uart.hpp"
 #include "imu.hpp"
+#include "task_priorities.hpp"
 
 static void startup(void* arg) {
 	init_uart_tasks();
@@ -11,7 +12,7 @@ static void startup(void* arg) {
 	static const osThreadAttr_t init_driver_attributes = {
 				.name = "InitializeDriver",
 				.stack_size = 1024,
-				.priority = (osPriority_t) osPriorityNormal
+				.priority = TaskPriority::DriverInit
 			};
 	osThreadNew(initializeDrivers, NULL, &init_driver_attributes);
 
@@ -22,7 +23,7 @@ extern "C" void initTasks() {
 	static const osThreadAttr_t startup_attributes = {
 				.name = "Startup",
 				.stack_size = 1024,
-				.priority = (osPriority_t) osPriorityHigh
+				.priority = TaskPriority::Startup
 			};
 	osThreadNew(startup, NULL, &startup_attributes);
 }

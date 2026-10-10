@@ -3,12 +3,13 @@
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_nucleo.h"
 #include "uart.hpp"
+#include "cmsis_os2.h"
 #include "cstring"
 
 MSA311::MSA311(I2C_HandleTypeDef* i2cHandle) : _i2c(i2cHandle) {
     uint8_t data = 0x00;
     HAL_I2C_Mem_Write(_i2c, MSA311_I2C_ADDR, MSA311_SOFT_RESET, I2C_MEMADD_SIZE_8BIT, &data, 1, 100);
-    HAL_Delay(10); 
+    osDelay(10);
     uint8_t partid = 0;
     HAL_I2C_Mem_Read(_i2c, MSA311_I2C_ADDR, MSA311_PARTID, I2C_MEMADD_SIZE_8BIT, &partid, 1, 100);
     serial_print_byte(partid);

@@ -54,6 +54,16 @@
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+  (void)xTask;
+  (void)pcTaskName;
+  Error_Handler();
+}
 
+void vApplicationMallocFailedHook(void)
+{
+  Error_Handler();
+}
 /* USER CODE END Application */
 

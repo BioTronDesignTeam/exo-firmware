@@ -33,3 +33,23 @@ void HAL_FDCAN_ErrorStatusCallback(FDCAN_HandleTypeDef *hfdcan, uint32_t ErrorSt
     ODRIVES1::recoverBusOff(hfdcan);
   }
 }
+
+void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+  BNO085::handleI2CEvent(hi2c, true);
+}
+
+void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+  BNO085::handleI2CEvent(hi2c, true);
+}
+
+void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
+{
+  BNO085::handleI2CEvent(hi2c, false);
+}
+
+void HAL_I2C_AbortCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+  BNO085::handleI2CEvent(hi2c, false);
+}

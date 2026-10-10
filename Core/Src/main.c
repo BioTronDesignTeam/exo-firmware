@@ -536,11 +536,7 @@ static void MPU_Config(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+  osThreadExit();
   /* USER CODE END 5 */
 }
 
