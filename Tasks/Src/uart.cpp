@@ -29,17 +29,19 @@ void send_telemetry_to_host(void*)
         };
 
         if (MSA311Handle != nullptr) {
-            telemetry.accel_x_g = MSA311Handle->msa311_data.x;
-            telemetry.accel_y_g = MSA311Handle->msa311_data.y;
-            telemetry.accel_z_g = MSA311Handle->msa311_data.z;
+            const msa311_accel_t accel = MSA311Handle->getAccelData();
+            telemetry.accel_x_g = accel.x;
+            telemetry.accel_y_g = accel.y;
+            telemetry.accel_z_g = accel.z;
         }
         if (bno085Handle != nullptr && bno085Handle->isInitialized()) {
-            telemetry.bno_quaternion_i = bno085Handle->rotationVector.i;
-            telemetry.bno_quaternion_j = bno085Handle->rotationVector.j;
-            telemetry.bno_quaternion_k = bno085Handle->rotationVector.k;
-            telemetry.bno_quaternion_real = bno085Handle->rotationVector.real;
-            telemetry.bno_accuracy_radians = bno085Handle->rotationVector.accuracyRadians;
-            telemetry.bno_status = bno085Handle->rotationVector.status;
+            const bno085_rot_vector_t rotation = bno085Handle->getRotationVector();
+            telemetry.bno_quaternion_i = rotation.i;
+            telemetry.bno_quaternion_j = rotation.j;
+            telemetry.bno_quaternion_k = rotation.k;
+            telemetry.bno_quaternion_real = rotation.real;
+            telemetry.bno_accuracy_radians = rotation.accuracyRadians;
+            telemetry.bno_status = rotation.status;
             telemetry.bno_valid = 1;
         }
 

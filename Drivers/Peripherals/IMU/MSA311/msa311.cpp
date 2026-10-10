@@ -26,9 +26,15 @@ HAL_StatusTypeDef MSA311::getAccel() {
     int16_t rawY = (int16_t)(rxBuffer[3] << 8 | rxBuffer[2]);
     int16_t rawZ = (int16_t)(rxBuffer[5] << 8 | rxBuffer[4]);
 
-    msa311_data.x = rawX / _accelSensitivity;
-    msa311_data.y = rawY / _accelSensitivity;
-    msa311_data.z = rawZ / _accelSensitivity;
+    const msa311_accel_t accel = {
+        rawX / _accelSensitivity,
+        rawY / _accelSensitivity,
+        rawZ / _accelSensitivity,
+    };
+
+    taskENTER_CRITICAL();
+    msa311_data = accel;
+    taskEXIT_CRITICAL();
 
     return status;
 }
