@@ -14,7 +14,7 @@ extern I2C_HandleTypeDef hi2c1;
 // equivalent to alignas(alignof(className)) which aligns everything correctly!
 alignas(ODRIVES1) static uint8_t odrives1Storage[sizeof(ODRIVES1)];
 // alignas(MPU6050) static uint8_t mpu6050Storage[sizeof(MPU6050)];
-alignas(MSA311) static uint8_t msa311Storage[sizeof(MSA311)];
+alignas(MSA311) static uint8_t msa311Storage[sizeof(MSA311)] __attribute__((unused));
 alignas(BNO085) static uint8_t bno085Storage[sizeof(BNO085)];
 
 // Now we create global handles that we can use anywhere!

@@ -104,20 +104,17 @@ static void update_bno085(void *arg) {
 }
 
 void init_imu_tasks() {
-    osThreadId_t updateMSA311Handle;
-    osThreadId_t updateBNO085Handle;
-
     static const osThreadAttr_t updateMSA311Attributes = {
         .name = "UpdateMSA311",
         .stack_size = 1024,
         .priority = TaskPriority::Diagnostics
     };
-    updateMSA311Handle = osThreadNew(update_msa311, NULL, &updateMSA311Attributes);
+    osThreadNew(update_msa311, NULL, &updateMSA311Attributes);
 
     static const osThreadAttr_t updateBNO085Attributes = {
         .name = "UpdateBNO085",
         .stack_size = 2048,
         .priority = TaskPriority::Imu
     };
-    updateBNO085Handle = osThreadNew(update_bno085, NULL, &updateBNO085Attributes);
+    osThreadNew(update_bno085, NULL, &updateBNO085Attributes);
 }
