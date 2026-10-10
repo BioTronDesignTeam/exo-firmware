@@ -41,6 +41,8 @@ enum class ParserState : uint8_t {
 osMessageQueueId_t serial_tx_queue = nullptr;
 osSemaphoreId_t serial_tx_done = nullptr;
 StreamBufferHandle_t serial_rx_stream = nullptr;
+volatile uint32_t last_host_frame_ms = 0;
+volatile bool host_frame_seen = false;
 uint8_t serial_rx_byte = 0;
 
 uint16_t crc16_ccitt_false(const uint8_t* data, size_t length)
@@ -150,6 +152,9 @@ private:
         if (crc16_ccitt_false(crc_buffer, 3 + length_) != received_crc_) {
             return;
         }
+
+        last_host_frame_ms = HAL_GetTick();
+        host_frame_seen = true;
 
         if (type_ == SerialPacketType::Ping) {
             (void)send_serial_packet(SerialPacketType::Ack, payload_, length_);
@@ -279,4 +284,12 @@ bool send_serial_packet(SerialPacketType type, const void* payload, uint16_t len
 bool send_serial_log(const char* message, uint16_t length)
 {
     return send_serial_packet(SerialPacketType::LogMessage, message, length);
+}
+
+uint32_t serial_host_link_age_ms()
+{
+    if (!host_frame_seen) {
+        return UINT32_MAX;
+    }
+    return HAL_GetTick() - last_host_frame_ms;
 }

@@ -29,3 +29,4 @@ struct __attribute__((packed)) serial_telemetry_payload_t {
 bool serial_protocol_init();
 bool send_serial_packet(SerialPacketType type, const void* payload, uint16_t length);
 bool send_serial_log(const char* message, uint16_t length);
+uint32_t serial_host_link_age_ms();
