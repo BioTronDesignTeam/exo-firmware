@@ -253,7 +253,7 @@ bool serial_protocol_init()
 
     static const osThreadAttr_t rx_attributes = {
         .name = "SerialRx",
-        .stack_size = 1536,
+        .stack_size = 2048,
         .priority = TaskPriority::SerialRx,
     };
     static const osThreadAttr_t tx_attributes = {

@@ -2,8 +2,12 @@
 #include <cmsis_os2.h>
 #include "drivers.hpp"
 #include "task_priorities.hpp"
+#include <stdio.h>
 
 namespace {
+
+constexpr uint32_t kTelemetryPeriodMs = 200;
+constexpr uint32_t kCanStatusEvery = 5;
 
 void uint8_to_hex(uint8_t byte, uint8_t* output, uint16_t length)
 {
@@ -19,8 +23,35 @@ void uint8_to_hex(uint8_t byte, uint8_t* output, uint16_t length)
     output[5] = '\n';
 }
 
+void log_can_status()
+{
+    if (odriveS1Handle == nullptr) {
+        return;
+    }
+
+    const odrive_can_heartbeat_t heartbeat = odriveS1Handle->read(odriveS1Handle->heartbeat);
+    const uint32_t heartbeatAge = odriveS1Handle->heartbeatAgeMs();
+    char age[12];
+    if (heartbeatAge == UINT32_MAX) {
+        snprintf(age, sizeof(age), "none");
+    } else {
+        snprintf(age, sizeof(age), "%lu", static_cast<unsigned long>(heartbeatAge));
+    }
+
+    char buffer[128];
+    snprintf(buffer, sizeof(buffer),
+             "CAN node=%u hb_age=%s state=%u axis_err=0x%lX bus_off=%lu rx_lost=%lu tx_err=%lu\r\n",
+             odriveS1Handle->nodeId(), age, heartbeat.axisState,
+             static_cast<unsigned long>(heartbeat.axisError),
+             static_cast<unsigned long>(ODRIVES1::busOffEvents),
+             static_cast<unsigned long>(ODRIVES1::rxFramesLost),
+             static_cast<unsigned long>(odriveS1Handle->txErrors));
+    SERIAL_PRINT(buffer);
+}
+
 void send_telemetry_to_host(void*)
 {
+    uint32_t loops = 0;
     for (;;) {
         serial_telemetry_payload_t telemetry = {
             .timestamp_ms = HAL_GetTick(),
@@ -47,7 +78,10 @@ void send_telemetry_to_host(void*)
         }
 
         (void)send_serial_packet(SerialPacketType::Telemetry, &telemetry, sizeof(telemetry));
-        osDelay(200);
+        if (++loops % kCanStatusEvery == 0) {
+            log_can_status();
+        }
+        osDelay(kTelemetryPeriodMs);
     }
 }
 
@@ -77,7 +111,7 @@ void init_uart_tasks()
 
     static const osThreadAttr_t telemetry_attributes = {
         .name = "SerialTelemetry",
-        .stack_size = 1024,
+        .stack_size = 2048,
         .priority = TaskPriority::Telemetry,
     };
     (void)osThreadNew(send_telemetry_to_host, nullptr, &telemetry_attributes);
