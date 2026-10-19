@@ -67,7 +67,7 @@ static void update_bno085(void *arg) {
         }
 
         const osStatus_t wakeStatus =
-            osSemaphoreAcquire(bno085_interrupt_semaphore_handle, 20U);
+            osSemaphoreAcquire(bno085_interrupt_semaphore_handle[0], 20U);
 
         // INT is active-low and remains asserted while packets are queued.
         // Checking the pin after a timeout also handles a packet that was

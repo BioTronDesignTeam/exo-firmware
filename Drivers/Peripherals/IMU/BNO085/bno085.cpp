@@ -1,7 +1,8 @@
 #include "bno085.hpp"
 #include <string.h>
 
-BNO085::BNO085(I2C_HandleTypeDef* i2cHandle) : _hi2c(i2cHandle) {}
+BNO085::BNO085(I2C_HandleTypeDef* i2cHandle, GPIO_TypeDef* interruptPort, uint16_t interruptPin)
+    : _hi2c(i2cHandle), _interruptPort(interruptPort), _interruptPin(interruptPin) {}
 
 bool BNO085::begin() {
     if (_hi2c == nullptr) {
@@ -31,7 +32,7 @@ bool BNO085::begin() {
             // The BNO085 only presents a valid SHTP header while INT is
             // asserted. Reading while it is high returns filler bytes that
             // do not form a packet.
-            if (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_6) == GPIO_PIN_RESET &&
+            if (HAL_GPIO_ReadPin(_interruptPort, _interruptPin) == GPIO_PIN_RESET &&
                 receivePacket(50U)) {
                 dispatchPacket();
                 if (_productIdReceived) {

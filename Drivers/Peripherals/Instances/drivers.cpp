@@ -27,7 +27,7 @@ void initializeDrivers(void* arg) {
 	for ( ;; ) {
 		odriveS1Handle = new (&odrives1Storage) ODRIVES1(&hfdcan1);
 		//MSA311Handle = new (&msa311Storage) MSA311(&hi2c1);
-		bno085Handle = new (&bno085Storage) BNO085(&hi2c1);
+		bno085Handle = new (&bno085Storage) BNO085(&hi2c1, GPIOC, GPIO_PIN_6);
 		// MPU6050Handle = new (&mpu6050Storage) MPU6050(&hi2c1);
 		osThreadExit();
 		//osDelay(5000);

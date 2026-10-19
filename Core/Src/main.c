@@ -66,7 +66,7 @@ const osThreadAttr_t defaultTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
-osSemaphoreId_t bno085_interrupt_semaphore_handle;
+osSemaphoreId_t bno085_interrupt_semaphore_handle[5];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -143,7 +143,9 @@ int main(void)
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
- bno085_interrupt_semaphore_handle = osSemaphoreNew(1, 0, NULL);
+  for(int i=0; i<5; i++){
+    bno085_interrupt_semaphore_handle[i] = osSemaphoreNew(1, 0, NULL);
+  }
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
@@ -740,6 +742,14 @@ static void MPU_Config(void)
   HAL_MPU_ConfigRegion(&region);
 
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == GPIO_PIN_6)
+  {
+    osSemaphoreRelease(bno085_interrupt_semaphore_handle[0]);
+  }
 }
 
 /* USER CODE END 4 */

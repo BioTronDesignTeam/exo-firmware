@@ -39,7 +39,7 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-extern osSemaphoreId_t bno085_interrupt_semaphore_handle;
+extern osSemaphoreId_t bno085_interrupt_semaphore_handle[5];
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/

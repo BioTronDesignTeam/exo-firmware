@@ -10,6 +10,8 @@ private:
     static constexpr uint8_t CHANNEL_COUNT = 6;
 
     I2C_HandleTypeDef* _hi2c;
+    GPIO_TypeDef* _interruptPort;
+    uint16_t _interruptPin;
     uint16_t _i2cAddress = BNO085_I2C_ADDR;
     uint8_t _rxBuffer[MAX_PACKET_LENGTH] = {0};
     uint8_t _txBuffer[MAX_PACKET_LENGTH] = {0};
@@ -37,7 +39,7 @@ public:
     uint8_t lastPacketChannel = 0;
     uint8_t lastPayloadPrefix[4] = {0};
 
-    explicit BNO085(I2C_HandleTypeDef* i2cHandle);
+    explicit BNO085(I2C_HandleTypeDef* i2cHandle, GPIO_TypeDef* interruptPort, uint16_t interruptPin);
     bool begin();
     bool receiveReports();
     bool isInitialized() const;
