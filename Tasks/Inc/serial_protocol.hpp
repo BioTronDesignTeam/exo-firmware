@@ -27,13 +27,6 @@ struct __attribute__((packed)) serial_bno085_telemetry_t {
 };
 
 struct __attribute__((packed)) serial_telemetry_payload_t {
-    // float bno_quaternion_i;
-    // float bno_quaternion_j;
-    // float bno_quaternion_k;
-    // float bno_quaternion_real;
-    // float bno_accuracy_radians;
-    // uint8_t bno_status;
-    // uint8_t bno_valid;
     serial_bno085_telemetry_t bno085[5];
 };
 

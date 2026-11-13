@@ -97,11 +97,16 @@ def default_port() -> str:
     raise ValueError("No ST-LINK serial port found. Use --list-ports, then specify --port COMx (or its device path).")
 
 
-def print_packet(packet_type: int, payload: bytes) -> None:
-    if packet_type == TYPE_TELEMETRY and len(payload) == 38:
-        timestamp, accel_x, accel_y, accel_z, quat_i, quat_j, quat_k, quat_real, accuracy, status, valid = (
-            struct.unpack("<IffffffffBB", payload)
-        )
+# Mirrors serial_bno085_telemetry_t (packed, little-endian).
+BNO085_TELEMETRY = struct.Struct("<IffffffffBB")
+BNO085_COUNT = 5
+# Mirrors serial_telemetry_payload_t: serial_bno085_telemetry_t bno085[5].
+TELEMETRY_PAYLOAD_SIZE = BNO085_TELEMETRY.size * BNO085_COUNT
+
+
+def print_telemetry(payload: bytes) -> None:
+    for index, fields in enumerate(BNO085_TELEMETRY.iter_unpack(payload)):
+        timestamp, accel_x, accel_y, accel_z, quat_i, quat_j, quat_k, quat_real, accuracy, status, valid = fields
         bno_text = (
             f" bno_q=({quat_i:+.4f},{quat_j:+.4f},{quat_k:+.4f},{quat_real:+.4f})"
             f" status={status} acc={accuracy:.3f}"
@@ -109,12 +114,20 @@ def print_packet(packet_type: int, payload: bytes) -> None:
             else " bno=unavailable"
         )
         print(
-            f"telemetry t={timestamp:>10} ms accel=({accel_x:+.3f}, {accel_y:+.3f}, {accel_z:+.3f}) g"
+            f"telemetry[{index}] t={timestamp:>10} ms accel=({accel_x:+.3f}, {accel_y:+.3f}, {accel_z:+.3f}) g"
             f"{bno_text}"
         )
-    elif packet_type == TYPE_TELEMETRY and len(payload) == 16:
-        timestamp, x, y, z = struct.unpack("<Ifff", payload)
-        print(f"telemetry t={timestamp:>10} ms accel=({x:+.3f}, {y:+.3f}, {z:+.3f}) g")
+
+
+def print_packet(packet_type: int, payload: bytes) -> None:
+    if packet_type == TYPE_TELEMETRY:
+        if len(payload) == TELEMETRY_PAYLOAD_SIZE:
+            print_telemetry(payload)
+        else:
+            print(
+                f"telemetry unexpected length {len(payload)} (expected {TELEMETRY_PAYLOAD_SIZE}) "
+                f"payload={payload.hex()}"
+            )
     elif packet_type == TYPE_LOG:
         print(f"log       {payload.decode('utf-8', errors='replace')}", end="")
     elif packet_type == TYPE_ACK:
