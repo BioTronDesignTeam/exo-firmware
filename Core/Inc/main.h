@@ -28,18 +28,19 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32h7xx_hal.h"
-#include "cmsis_os2.h"
+
 #include "stm32h7xx_nucleo.h"
 #include <stdio.h>
 
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "cmsis_os2.h"
+#include "FreeRTOS.h"
+#include "task.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-extern osSemaphoreId_t bno085_interrupt_semaphore_handle[5];
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -49,6 +50,8 @@ extern osSemaphoreId_t bno085_interrupt_semaphore_handle[5];
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
+
+extern osThreadId_t updateBNO085Handle;
 
 /* USER CODE END EM */
 

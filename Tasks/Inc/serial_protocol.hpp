@@ -12,7 +12,7 @@ enum class SerialPacketType : uint8_t {
 
 constexpr uint16_t SERIAL_PROTOCOL_MAX_PAYLOAD = 256;
 
-struct __attribute__((packed)) serial_telemetry_payload_t {
+struct __attribute__((packed)) serial_bno085_telemetry_t {
     uint32_t timestamp_ms;
     float accel_x_g;
     float accel_y_g;
@@ -25,6 +25,18 @@ struct __attribute__((packed)) serial_telemetry_payload_t {
     uint8_t bno_status;
     uint8_t bno_valid;
 };
+
+struct __attribute__((packed)) serial_telemetry_payload_t {
+    // float bno_quaternion_i;
+    // float bno_quaternion_j;
+    // float bno_quaternion_k;
+    // float bno_quaternion_real;
+    // float bno_accuracy_radians;
+    // uint8_t bno_status;
+    // uint8_t bno_valid;
+    serial_bno085_telemetry_t bno085[5];
+};
+
 
 bool serial_protocol_init();
 bool send_serial_packet(SerialPacketType type, const void* payload, uint16_t length);

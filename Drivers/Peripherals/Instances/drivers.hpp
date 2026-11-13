@@ -8,6 +8,6 @@
 extern ODRIVES1 *odriveS1Handle;
 // extern MPU6050 *MPU6050Handle;
 extern MSA311 *MSA311Handle;
-extern BNO085 *bno085Handle;
+extern BNO085 *bno085Handle[5];
 
 void initializeDrivers(void* arg);

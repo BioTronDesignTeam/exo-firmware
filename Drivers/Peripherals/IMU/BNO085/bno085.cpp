@@ -1,8 +1,14 @@
 #include "bno085.hpp"
 #include <string.h>
 
-BNO085::BNO085(I2C_HandleTypeDef* i2cHandle, GPIO_TypeDef* interruptPort, uint16_t interruptPin)
-    : _hi2c(i2cHandle), _interruptPort(interruptPort), _interruptPin(interruptPin) {}
+BNO085::BNO085(I2C_HandleTypeDef* i2cHandle, GPIO_TypeDef* interruptPort, uint16_t interruptPin, bool altAddress)
+    : _hi2c(i2cHandle), _interruptPort(interruptPort), _interruptPin(interruptPin) {
+        if (altAddress) {
+            _i2cAddress = BNO085_I2C_ADDR_ALT;
+        } else {
+            _i2cAddress = BNO085_I2C_ADDR;
+        }
+    }
 
 bool BNO085::begin() {
     if (_hi2c == nullptr) {

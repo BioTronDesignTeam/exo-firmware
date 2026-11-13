@@ -22,26 +22,31 @@ void send_telemetry_to_host(void*)
 {
     for (;;) {
         serial_telemetry_payload_t telemetry = {
-            .timestamp_ms = HAL_GetTick(),
-            .accel_x_g = 0.0f,
-            .accel_y_g = 0.0f,
-            .accel_z_g = 0.0f,
+            
+            .bno085 = {},
         };
 
-        if (MSA311Handle != nullptr) {
-            telemetry.accel_x_g = MSA311Handle->msa311_data.x;
-            telemetry.accel_y_g = MSA311Handle->msa311_data.y;
-            telemetry.accel_z_g = MSA311Handle->msa311_data.z;
+//        if (MSA311Handle != nullptr) {
+//            telemetry.accel_x_g = MSA311Handle->msa311_data.x;
+//            telemetry.accel_y_g = MSA311Handle->msa311_data.y;
+//            telemetry.accel_z_g = MSA311Handle->msa311_data.z;
+//        }
+        for(int i=0; i<5; i++){
+        if (bno085Handle[i] != nullptr && bno085Handle[i]->isInitialized()) {
+            telemetry.bno085[i].timestamp_ms = HAL_GetTick();
+            telemetry.bno085[i].accel_x_g = bno085Handle[i]->acceleration.x;
+            telemetry.bno085[i].accel_y_g = bno085Handle[i]->acceleration.y;
+            telemetry.bno085[i].accel_z_g = bno085Handle[i]->acceleration.z;
+            telemetry.bno085[i].bno_quaternion_i = bno085Handle[i]->rotationVector.i;
+            telemetry.bno085[i].bno_quaternion_j = bno085Handle[i]->rotationVector.j;
+            telemetry.bno085[i].bno_quaternion_k = bno085Handle[i]->rotationVector.k;
+            telemetry.bno085[i].bno_quaternion_real = bno085Handle[i]->rotationVector.real;
+            telemetry.bno085[i].bno_accuracy_radians = bno085Handle[i]->rotationVector.accuracyRadians;
+            telemetry.bno085[i].bno_status = bno085Handle[i]->rotationVector.status;
+            telemetry.bno085[i].bno_valid = 1;
         }
-        if (bno085Handle != nullptr && bno085Handle->isInitialized()) {
-            telemetry.bno_quaternion_i = bno085Handle->rotationVector.i;
-            telemetry.bno_quaternion_j = bno085Handle->rotationVector.j;
-            telemetry.bno_quaternion_k = bno085Handle->rotationVector.k;
-            telemetry.bno_quaternion_real = bno085Handle->rotationVector.real;
-            telemetry.bno_accuracy_radians = bno085Handle->rotationVector.accuracyRadians;
-            telemetry.bno_status = bno085Handle->rotationVector.status;
-            telemetry.bno_valid = 1;
-        }
+    }
+    
 
         (void)send_serial_packet(SerialPacketType::Telemetry, &telemetry, sizeof(telemetry));
         osDelay(200);

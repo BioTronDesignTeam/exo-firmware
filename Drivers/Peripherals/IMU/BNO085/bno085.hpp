@@ -39,7 +39,7 @@ public:
     uint8_t lastPacketChannel = 0;
     uint8_t lastPayloadPrefix[4] = {0};
 
-    explicit BNO085(I2C_HandleTypeDef* i2cHandle, GPIO_TypeDef* interruptPort, uint16_t interruptPin);
+    explicit BNO085(I2C_HandleTypeDef* i2cHandle, GPIO_TypeDef* interruptPort, uint16_t interruptPin, bool altAddress);
     bool begin();
     bool receiveReports();
     bool isInitialized() const;
