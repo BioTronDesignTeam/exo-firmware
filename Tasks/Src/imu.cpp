@@ -91,7 +91,7 @@ static void update_bno085(void *arg) {
     for (;;) {
         if(xTaskNotifyWait(0, 0xFFFFFFFF, &ulNotifiedValue, portMAX_DELAY) == pdTRUE) {
             SERIAL_PRINT("interrupt received/pending");
-                  BSP_LED_On(LED_YELLOW);
+                  BSP_LED_Toggle(LED_YELLOW);
             for (uint32_t i=0; i<5; i++) {
                 if(ulNotifiedValue & (1u << i)) {
                     send_bno085_data(i);

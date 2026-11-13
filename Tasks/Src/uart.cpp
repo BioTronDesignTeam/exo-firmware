@@ -48,7 +48,7 @@ void send_telemetry_to_host(void*)
     }
     
 
-        (void)send_serial_packet(SerialPacketType::Telemetry, &telemetry, sizeof(telemetry));
+        //(void)send_serial_packet(SerialPacketType::Telemetry, &telemetry, sizeof(telemetry));
         osDelay(200);
     }
 }
