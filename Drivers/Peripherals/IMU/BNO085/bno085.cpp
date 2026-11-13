@@ -1,5 +1,6 @@
 #include "bno085.hpp"
 #include <string.h>
+#include "sensor_data.hpp"
 
 BNO085::BNO085(I2C_HandleTypeDef* i2cHandle) : _hi2c(i2cHandle) {}
 
@@ -187,6 +188,14 @@ void BNO085::parseRotVector(uint16_t reportOffset) {
     rotationVector.k = readLe16(reportOffset + 8U) * quaternionScale;
     rotationVector.real = readLe16(reportOffset + 10U) * quaternionScale;
     rotationVector.accuracyRadians = readLe16(reportOffset + 12U) * accuracyScale;
+    
+    sensorData.bno085Rotation.i = rotationVector.i;
+    sensorData.bno085Rotation.j = rotationVector.j;
+    sensorData.bno085Rotation.k = rotationVector.k;
+    sensorData.bno085Rotation.real = rotationVector.real;
+    sensorData.bno085Rotation.status = rotationVector.status;
+    sensorData.bno085Rotation.accuracyRadians = rotationVector.accuracyRadians;
+
 }
 
 bool BNO085::isInitialized() const {

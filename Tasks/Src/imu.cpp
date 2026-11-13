@@ -4,6 +4,7 @@
 #include <cmsis_os2.h>
 #include <string.h>
 #include <stdio.h>
+#include "sensor_data.hpp"
 
 extern "C" {
 #include "main.h"
@@ -17,6 +18,9 @@ void update_msa311(void *arg) {
 
         if (MSA311Handle != nullptr) {
             if (MSA311Handle->getAccel() == HAL_OK) {
+                sensorData.msa311.x = MSA311Handle->msa311_data.x;
+                sensorData.msa311.y = MSA311Handle->msa311_data.y;
+                sensorData.msa311.z = MSA311Handle->msa311_data.z;
                 snprintf(buf, sizeof(buf), "MSA X=%.2f Y=%.2f Z=%.2f\r\n",
                          MSA311Handle->msa311_data.x,
                          MSA311Handle->msa311_data.y,

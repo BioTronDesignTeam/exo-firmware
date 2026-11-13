@@ -17,6 +17,7 @@ add_compile_definitions(
 set(INCLUDE_DIRS
     Core/Inc
     Tasks/Inc
+    Data/Inc
     Drivers/STM32H7xx_HAL_Driver/Inc
     Drivers/STM32H7xx_HAL_Driver/Inc/Legacy
     Drivers/BSP/STM32H7xx_Nucleo
@@ -83,6 +84,9 @@ set(C_SOURCES
 )
 
 set(CXX_SOURCES
+    Data/Src/sensor_data.cpp
+
+
     Tasks/Src/general_thread.cpp
     Tasks/Src/imu.cpp
     Tasks/Src/motor_controller.cpp

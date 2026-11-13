@@ -1,6 +1,7 @@
 #include "uart.hpp"
 #include <cmsis_os2.h>
 #include "drivers.hpp"
+#include "sensor_data.hpp"
 
 namespace {
 
@@ -29,17 +30,17 @@ void send_telemetry_to_host(void*)
         };
 
         if (MSA311Handle != nullptr) {
-            telemetry.accel_x_g = MSA311Handle->msa311_data.x;
-            telemetry.accel_y_g = MSA311Handle->msa311_data.y;
-            telemetry.accel_z_g = MSA311Handle->msa311_data.z;
+            telemetry.accel_x_g = sensorData.msa311.x;
+            telemetry.accel_y_g = sensorData.msa311.y;
+            telemetry.accel_z_g = sensorData.msa311.z;
         }
         if (bno085Handle != nullptr && bno085Handle->isInitialized()) {
-            telemetry.bno_quaternion_i = bno085Handle->rotationVector.i;
-            telemetry.bno_quaternion_j = bno085Handle->rotationVector.j;
-            telemetry.bno_quaternion_k = bno085Handle->rotationVector.k;
-            telemetry.bno_quaternion_real = bno085Handle->rotationVector.real;
-            telemetry.bno_accuracy_radians = bno085Handle->rotationVector.accuracyRadians;
-            telemetry.bno_status = bno085Handle->rotationVector.status;
+            telemetry.bno_quaternion_i = sensorData.bno085Rotation.i;
+            telemetry.bno_quaternion_j = sensorData.bno085Rotation.j;
+            telemetry.bno_quaternion_k = sensorData.bno085Rotation.k;
+            telemetry.bno_quaternion_real = sensorData.bno085Rotation.real;
+            telemetry.bno_accuracy_radians = sensorData.bno085Rotation.accuracyRadians;
+            telemetry.bno_status = sensorData.bno085Rotation.status;
             telemetry.bno_valid = 1;
         }
 
