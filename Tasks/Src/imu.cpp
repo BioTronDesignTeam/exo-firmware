@@ -1,6 +1,6 @@
 #include "imu.hpp"
 #include "drivers.hpp"
-#include "uart.hpp"
+#include "serial_protocol.hpp"
 #include <cmsis_os2.h>
 #include <string.h>
 #include <stdio.h>

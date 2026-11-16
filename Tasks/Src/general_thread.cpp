@@ -1,12 +1,12 @@
 #include "general_thread.hpp"
 #include "drivers.hpp"
-#include "uart.hpp"
+#include "serial_protocol.hpp"
 #include "imu.hpp"
 
 
 
 extern "C" void initTasks() {
-	init_uart_tasks();
+	init_serial_tasks();
 	init_imu_tasks();
 	//motorControllerInitTask();
 }
