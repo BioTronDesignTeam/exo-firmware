@@ -159,7 +159,7 @@ int main(void)
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-
+  //exit into our code
   initDrivers(); // init thread constructs drivers, then calls initTasks() and exits
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -758,8 +758,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   {
     bit = (1u << 1);
   }
-  // Ignore BNO interrupts until the init thread has created the BNO task
-  if(bit && updateBNO085Handle != NULL) xTaskNotifyFromISR(updateBNO085Handle, bit, eSetBits, &xHigherPriorityTaskWoken);
+  // Edges before the BNO task exists are dropped; the task polls INT, so it
+  // still picks up whatever the sensor has waiting once it starts.
+  if(bit && updateBNO085Handle != NULL)
+  {
+    xTaskNotifyFromISR(updateBNO085Handle, bit, eSetBits, &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  }
 
 }
 

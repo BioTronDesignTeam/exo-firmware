@@ -212,7 +212,11 @@ bool BNO085::handlePacket() {
     // aren't reassembled here, so both parts are skipped.
     const bool isTruncated = _rxHeader.length > sizeof(_rxPacket);
     const bool hasPayload = _rxHeader.length > kHeaderLength;
-    if (_rxHeader.isContinuation || isTruncated || !hasPayload) {
+    if (_rxHeader.isContinuation || isTruncated) {
+        ++_diagnostics.skippedPackets;
+        return false;
+    }
+    if (!hasPayload) {
         return false;
     }
 
@@ -363,18 +367,38 @@ bool BNO085::sendPacket(uint8_t channelId, const uint8_t* payload, uint16_t payl
 
 // Read one packet into _rxPacket and decode its header into _rxHeader.
 // Returns false if there was nothing to read or the header is invalid.
+//
+// Two transactions, as in CEVA's reference I2C HAL: first read only the
+// 4-byte header to learn the length, then read the whole packet (the sensor
+// sends it again from the header). Reading a fixed-size block instead either
+// wastes bus time on short packets or cuts long ones, and a cut packet loses
+// every report in it -- including the rotation vector.
 bool BNO085::readPacket() {
-    // The sensor restarts its output on every I2C STOP, so a packet has to be
-    // read in one transaction. Read a full buffer; the header says how much
-    // of it is real.
-    if (HAL_I2C_Master_Receive(_i2c, _i2cAddress, _rxPacket, sizeof(_rxPacket), kI2cTimeoutMs) != HAL_OK) {
+    if (HAL_I2C_Master_Receive(_i2c, _i2cAddress, _rxPacket, kHeaderLength, kI2cTimeoutMs) != HAL_OK) {
         ++_diagnostics.i2cErrors;
         return false;
     }
+    const uint16_t firstLengthField = readUint16Le(_rxPacket);
+    const uint16_t announcedLength = firstLengthField & kLengthMask;
+    if (announcedLength == 0U) {
+        return false;  // sensor had nothing to send; not an error
+    }
+    if (announcedLength > kHeaderLength) {
+        // Longer packets than the buffer arrive as a first part plus
+        // continuations; read what fits and let handlePacket() skip it.
+        const uint16_t readLength = (announcedLength < sizeof(_rxPacket)) ? announcedLength : sizeof(_rxPacket);
+        if (HAL_I2C_Master_Receive(_i2c, _i2cAddress, _rxPacket, readLength, kI2cTimeoutMs) != HAL_OK) {
+            ++_diagnostics.i2cErrors;
+            return false;
+        }
+    }
 
-    const uint16_t lengthField = readUint16Le(_rxPacket);
-    _rxHeader.isContinuation = (lengthField & kContinuationFlag) != 0U;
-    _rxHeader.length = lengthField & kLengthMask;
+    // Take length and continuation from the first (header-only) read. The
+    // sensor counts those 4 bytes as delivered, so it re-sends the packet
+    // with the continuation bit set even though the cargo after the header
+    // is the complete packet. Trusting that bit would drop every packet.
+    _rxHeader.isContinuation = (firstLengthField & kContinuationFlag) != 0U;
+    _rxHeader.length = announcedLength;
     _rxHeader.channel = _rxPacket[2];
 
     if (_rxHeader.length == 0U) {

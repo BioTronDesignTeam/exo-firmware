@@ -38,6 +38,7 @@ public:
         uint32_t packetsReceived;
         uint32_t i2cErrors;
         uint32_t malformedPackets;
+        uint32_t skippedPackets;     // too big for the buffer, or continuations
         uint16_t lastPacketLength;   // as announced by the packet header
         uint8_t lastPacketChannel;
         uint8_t lastPayloadPrefix[4];
@@ -65,7 +66,9 @@ public:
 
 private:
     static constexpr uint16_t kHeaderLength = 4;
-    static constexpr uint16_t kMaxPacketLength = 64;
+    // Large enough for several batched reports. Bigger packets are still
+    // skipped (counted in Diagnostics::skippedPackets).
+    static constexpr uint16_t kMaxPacketLength = 256;
 
     struct PacketHeader {
         uint16_t length;      // whole packet including header; may exceed kMaxPacketLength
@@ -118,6 +121,7 @@ public:
     const uint32_t& packetsReceived = _diagnostics.packetsReceived;
     const uint32_t& i2cErrors = _diagnostics.i2cErrors;
     const uint32_t& malformedPackets = _diagnostics.malformedPackets;
+    const uint32_t& skippedPackets = _diagnostics.skippedPackets;
     const uint16_t& lastPacketLength = _diagnostics.lastPacketLength;
     const uint8_t& lastPacketChannel = _diagnostics.lastPacketChannel;
     const uint8_t (&lastPayloadPrefix)[4] = _diagnostics.lastPayloadPrefix;

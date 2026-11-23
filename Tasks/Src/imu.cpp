@@ -4,6 +4,7 @@
 #include <cmsis_os2.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 extern "C" {
 #include "main.h"
@@ -31,72 +32,104 @@ void update_msa311(void *arg) {
     }
 }
 
-void send_bno085_data(uint32_t index){
-    uint32_t lastDiagnosticsMs = 0;
-     if (bno085Handle[index] == nullptr) {
+// The BNO085 pulls INT low when it has a packet and holds it low until the
+// host reads it, so each backlog produces exactly one falling edge. If that
+// edge is missed -- it happened before this task existed, or the MCU was
+// reset/reflashed while the sensor stayed powered and INT was already low --
+// no further edge ever comes and the sensor waits forever. So the EXTI
+// notification is only a wake-up hint: the task also wakes every kBnoPollMs
+// and services every sensor. receiveReports() checks the INT level itself,
+// so a sensor with nothing waiting costs one GPIO read.
+static constexpr uint32_t kBnoCount = 5;
+static constexpr uint32_t kBnoPollMs = 10;
+static constexpr uint32_t kBnoBeginRetryMs = 1000;
+static constexpr uint32_t kBnoPrintPeriodMs = 1000;
+
+static void print_bno085_diagnostics(uint32_t index, const char* what) {
+    const BNO085* imu = bno085Handle[index];
+    serial_printf("BNO085[%lu]: %s (packets=%lu i2c_errors=%lu malformed=%lu last=%u ch=%u data=%02X%02X%02X%02X)\r\n",
+                  static_cast<unsigned long>(index), what,
+                  static_cast<unsigned long>(imu->packetsReceived),
+                  static_cast<unsigned long>(imu->i2cErrors),
+                  static_cast<unsigned long>(imu->malformedPackets),
+                  imu->lastPacketLength,
+                  imu->lastPacketChannel,
+                  imu->lastPayloadPrefix[0],
+                  imu->lastPayloadPrefix[1],
+                  imu->lastPayloadPrefix[2],
+                  imu->lastPayloadPrefix[3]);
+}
+
+static void service_bno085(uint32_t index) {
+    static bool beginAttempted[kBnoCount] = {};
+    static uint32_t lastBeginAttemptMs[kBnoCount] = {};
+    static uint32_t lastPrintMs[kBnoCount] = {};
+
+    BNO085* imu = bno085Handle[index];
+    if (imu == nullptr) {
+        return;
+    }
+
+    const uint32_t now = HAL_GetTick();
+
+    if (!imu->isInitialized()) {
+        if (beginAttempted[index] && (now - lastBeginAttemptMs[index]) < kBnoBeginRetryMs) {
             return;
         }
-
-        if (!bno085Handle[index]->isInitialized()) {
-            SERIAL_PRINT("BNO085: requesting product ID\r\n");
-            if (!bno085Handle[index]->begin()) {
-                char buffer[128];
-                snprintf(buffer, sizeof(buffer),
-                         "BNO085: initialization retry failed (i2c_errors=%lu malformed=%lu last=%u ch=%u data=%02X%02X%02X%02X)\r\n",
-                         static_cast<unsigned long>(bno085Handle[index]->i2cErrors),
-                         static_cast<unsigned long>(bno085Handle[index]->malformedPackets),
-                         bno085Handle[index]->lastPacketLength,
-                         bno085Handle[index]->lastPacketChannel,
-                         bno085Handle[index]->lastPayloadPrefix[0],
-                         bno085Handle[index]->lastPayloadPrefix[1],
-                         bno085Handle[index]->lastPayloadPrefix[2],
-                         bno085Handle[index]->lastPayloadPrefix[3]);
-                SERIAL_PRINT(buffer);
-                osDelay(1000);
-                // continue;
-            }
-            SERIAL_PRINT("BNO085: rotation vector enabled at 100 Hz\r\n");
+        beginAttempted[index] = true;
+        lastBeginAttemptMs[index] = now;
+        serial_printf("BNO085[%lu]: requesting product ID\r\n", static_cast<unsigned long>(index));
+        if (!imu->begin()) {
+            print_bno085_diagnostics(index, "init failed, retrying");
+            return;
         }
-        
+        serial_printf("BNO085[%lu]: reports enabled\r\n", static_cast<unsigned long>(index));
+    }
 
-        bno085Handle[index]->receiveReports();
-        
-        
+    imu->receiveReports();
 
-        const uint32_t now = HAL_GetTick();
-        if ((now - lastDiagnosticsMs) >= 1000U) {
-            lastDiagnosticsMs = now;
-            char buffer[240];
-            const bno085_rot_vector_t& rotation = bno085Handle[index]->rotationVector;
-            snprintf(buffer, sizeof(buffer),
-                     "BNO085 q=(%.4f,%.4f,%.4f,%.4f) status=%u acc=%.3f "
-                     "packets=%lu i2c_errors=%lu malformed=%lu last=%u ch=%u data=%02X%02X%02X%02X\r\n",
-                     rotation.i, rotation.j, rotation.k, rotation.real,
-                     rotation.status, rotation.accuracyRadians,
-                     static_cast<unsigned long>(bno085Handle[index]->packetsReceived),
-                     static_cast<unsigned long>(bno085Handle[index]->i2cErrors),
-                     static_cast<unsigned long>(bno085Handle[index]->malformedPackets),
-                     bno085Handle[index]->lastPacketLength,
-                     bno085Handle[index]->lastPacketChannel,
-                     bno085Handle[index]->lastPayloadPrefix[0],
-                     bno085Handle[index]->lastPayloadPrefix[1],
-                     bno085Handle[index]->lastPayloadPrefix[2],
-                     bno085Handle[index]->lastPayloadPrefix[3]);
-            SERIAL_PRINT(buffer);
-        }
+    if ((now - lastPrintMs[index]) >= kBnoPrintPeriodMs) {
+        lastPrintMs[index] = now;
+        const bno085::Sample sample = imu->latestSample();
+        const bno085::OrientationReading& q = sample.orientation;
+
+        // Quaternion -> roll/pitch/yaw in degrees (ZYX order, sensor frame
+        // as printed on the board). Easier to check by hand than i/j/k/real.
+        constexpr float kRadToDeg = 57.2957795f;
+        const float sinPitch = 2.0f * (q.real * q.j - q.k * q.i);
+        const float roll  = atan2f(2.0f * (q.real * q.i + q.j * q.k),
+                                   1.0f - 2.0f * (q.i * q.i + q.j * q.j)) * kRadToDeg;
+        const float pitch = asinf(fmaxf(-1.0f, fminf(1.0f, sinPitch))) * kRadToDeg;
+        const float yaw   = atan2f(2.0f * (q.real * q.k + q.i * q.j),
+                                   1.0f - 2.0f * (q.j * q.j + q.k * q.k)) * kRadToDeg;
+
+        const bno085::Vector3Reading& a = sample.acceleration;
+        const bno085::Vector3Reading& m = sample.magneticField;
+        const float accelMag = sqrtf(a.x * a.x + a.y * a.y + a.z * a.z);  // ~9.81 at rest
+        const float fieldMag = sqrtf(m.x * m.x + m.y * m.y + m.z * m.z);  // Earth: ~25-65 uT
+
+        serial_printf("BNO085[%lu] roll=%6.1f pitch=%6.1f yaw=%6.1f st=%u err=%.2frad"
+                      " | a=(%5.2f,%5.2f,%5.2f) |a|=%.2f st=%u"
+                      " | |B|=%.1fuT st=%u | skipped=%lu\r\n",
+                      static_cast<unsigned long>(index),
+                      roll, pitch, yaw, q.status, q.accuracyRadians,
+                      a.x, a.y, a.z, accelMag, a.status,
+                      fieldMag, m.status,
+                      static_cast<unsigned long>(imu->skippedPackets));
+    }
 }
 
 static void update_bno085(void *arg) {
-    uint32_t ulNotifiedValue;
+    (void)arg;
     for (;;) {
-        if(xTaskNotifyWait(0, 0xFFFFFFFF, &ulNotifiedValue, portMAX_DELAY) == pdTRUE) {
-            SERIAL_PRINT("interrupt received/pending");
-                  BSP_LED_Toggle(LED_YELLOW);
-            for (uint32_t i=0; i<5; i++) {
-                if(ulNotifiedValue & (1u << i)) {
-                    send_bno085_data(i);
-                }
-            }
+        uint32_t notifiedBits = 0;
+        // Wake on an INT edge, or after kBnoPollMs if none arrives.
+        if (xTaskNotifyWait(0, 0xFFFFFFFFu, &notifiedBits, pdMS_TO_TICKS(kBnoPollMs)) == pdTRUE &&
+            notifiedBits != 0) {
+            BSP_LED_Toggle(LED_YELLOW);  // blinks only on real EXTI edges
+        }
+        for (uint32_t i = 0; i < kBnoCount; ++i) {
+            service_bno085(i);
         }
     }
 }

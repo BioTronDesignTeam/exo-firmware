@@ -16,10 +16,10 @@ extern "C" void initTasks() {
 static void initThread(void* arg) {
 	(void)arg;
 	BSP_LED_On(LED_RED);
-	serial_init();
+	serial_init(); //serial_protocol.hpp
 	SERIAL_PRINTLN("boot: init thread started");
-	constructDrivers();
-	initTasks();
+	constructDrivers(); //drivers.hpp
+	initTasks(); //in this file
 	SERIAL_PRINTLN("boot: init done");
 	BSP_LED_Off(LED_RED);
 	osThreadExit();
