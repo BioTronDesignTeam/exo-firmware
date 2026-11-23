@@ -23,15 +23,12 @@ ODRIVES1 *odriveS1Handle = nullptr;
 MSA311 *MSA311Handle = nullptr;
 BNO085 *bno085Handle[5] = {nullptr, nullptr, nullptr, nullptr, nullptr};
 
-// Driver Initialization
-void initializeDrivers(void* arg) {
-	for ( ;; ) {
-		odriveS1Handle = new (&odrives1Storage) ODRIVES1(&hfdcan1);
-		//MSA311Handle = new (&msa311Storage) MSA311(&hi2c1);
-		bno085Handle[0] = new (&bno085Storage) BNO085(&hi2c1, GPIOF, GPIO_PIN_3, false);
-		bno085Handle[1] = new (&bno085Storage) BNO085(&hi2c1, GPIOG, GPIO_PIN_12, true);
-		// MPU6050Handle = new (&mpu6050Storage) MPU6050(&hi2c1);
-		osThreadExit();
-		//osDelay(5000);
-	}
+// Driver construction. Called once from the init thread (general_thread.cpp)
+// before any task that uses these handles is created.
+void constructDrivers() {
+	odriveS1Handle = new (&odrives1Storage) ODRIVES1(&hfdcan1);
+	//MSA311Handle = new (&msa311Storage) MSA311(&hi2c1);
+	bno085Handle[0] = new (&bno085Storage) BNO085(&hi2c1, GPIOF, GPIO_PIN_3, false);
+	bno085Handle[1] = new (&bno085Storage2) BNO085(&hi2c1, GPIOG, GPIO_PIN_12, true);
+	// MPU6050Handle = new (&mpu6050Storage) MPU6050(&hi2c1);
 }

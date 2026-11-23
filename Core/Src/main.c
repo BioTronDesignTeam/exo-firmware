@@ -160,8 +160,7 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_THREADS */
 
-  initTasks(); //create task to forward queue to esp through uart
-  initDrivers(); 
+  initDrivers(); // init thread constructs drivers, then calls initTasks() and exits
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
@@ -759,7 +758,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   {
     bit = (1u << 1);
   }
-  if(bit) xTaskNotifyFromISR(updateBNO085Handle, bit, eSetBits, &xHigherPriorityTaskWoken);
+  // Ignore BNO interrupts until the init thread has created the BNO task
+  if(bit && updateBNO085Handle != NULL) xTaskNotifyFromISR(updateBNO085Handle, bit, eSetBits, &xHigherPriorityTaskWoken);
 
 }
 

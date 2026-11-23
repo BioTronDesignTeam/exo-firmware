@@ -34,7 +34,7 @@ void update_msa311(void *arg) {
 void send_bno085_data(uint32_t index){
     uint32_t lastDiagnosticsMs = 0;
      if (bno085Handle[index] == nullptr) {
-            osDelay(100);
+            return;
         }
 
         if (!bno085Handle[index]->isInitialized()) {
