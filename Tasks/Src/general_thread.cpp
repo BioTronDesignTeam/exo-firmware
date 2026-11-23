@@ -1,12 +1,11 @@
 #include "general_thread.hpp"
 #include "drivers.hpp"
-#include "uart.hpp"
+#include "serial_protocol.hpp"
 #include "imu.hpp"
 
 
 
 extern "C" void initTasks() {
-	init_uart_tasks();
 	init_imu_tasks();
 	//motorControllerInitTask();
 }
@@ -17,8 +16,11 @@ extern "C" void initTasks() {
 static void initThread(void* arg) {
 	(void)arg;
 	BSP_LED_On(LED_RED);
+	serial_init();
+	SERIAL_PRINTLN("boot: init thread started");
 	constructDrivers();
 	initTasks();
+	SERIAL_PRINTLN("boot: init done");
 	BSP_LED_Off(LED_RED);
 	osThreadExit();
 }

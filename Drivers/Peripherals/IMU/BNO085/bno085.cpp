@@ -311,6 +311,11 @@ bool BNO085::enableReport(uint8_t reportId, uint32_t intervalUs) {
     return sendPacket(channel::Control, command, sizeof(command));
 }
 
+// Out-of-line definition: required when building as C++14 (the STM32CubeIDE
+// default), where a static constexpr array member is only declared in the
+// class. Redundant but harmless under C++17 (the CMake build).
+constexpr BNO085::StreamedReport BNO085::kStreamedReports[];
+
 // Enable every entry in kStreamedReports. Tries them all even if one fails,
 // and returns true only if all succeeded.
 bool BNO085::enableStreamedReports() {
