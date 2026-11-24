@@ -13,7 +13,7 @@ Cube command-line toolchain.
 
 The ST-LINK provides both:
 - SWD for programming and debugging.
-- A virtual COM port for the firmware's direct serial protocol. On Linux it is
+- A virtual COM port for the firmware's plain-text debug output. On Linux it is
   normally `/dev/serial/by-id/*STLINK-V3*-if02` or `/dev/ttyACM0`.
 
 ## Repository layout
@@ -21,7 +21,7 @@ The ST-LINK provides both:
 | Path                       | Purpose                                                                   |
 | -------------------------- | ------------------------------------------------------------------------- |
 | `Core/`                    | CubeMX-generated startup, HAL configuration, and application entry point. |
-| `Tasks/`                   | FreeRTOS tasks and the direct serial protocol.                            |
+| `Tasks/`                   | FreeRTOS tasks and the serial debug printer (`serial_protocol.cpp`).      |
 | `Drivers/Peripherals/`     | Device drivers such as the BNO085 and MSA311 IMUs.                        |
 | `exo-firmware.ioc`         | STM32CubeMX configuration for STM32CubeIDE.                               |
 | `CMakeLists.txt`           | Authoritative CMake build source list.                                    |
@@ -184,8 +184,9 @@ docker run --rm -v "$PWD":/workspace -w /workspace exo-firmware-dev \
 
 ## Serial monitor
 
-`tools/exo_serial_host.py` reads telemetry and logs from the ST-LINK virtual
-COM port and can send pings to check acknowledgements. It uses pySerial on
+`tools/exo_serial_host.py` prints everything the board sends over the ST-LINK
+virtual COM port as plain text (firmware output comes from `SERIAL_PRINT`,
+`SERIAL_PRINTLN` and `serial_printf` in `Tasks/Src/serial_protocol.cpp`). It uses pySerial on
 Linux, macOS, and Windows. The dev container installs Python and pySerial.
 
 For native Windows, install [Python 3](https://www.python.org/downloads/) and
@@ -195,7 +196,7 @@ terminal from the repository root:
 ```powershell
 py -3 -m pip install -r tools/requirements.txt
 py -3 tools/exo_serial_host.py --list-ports
-py -3 tools/exo_serial_host.py --duration 8 --ping-interval 0.73
+py -3 tools/exo_serial_host.py --duration 8
 ```
 
 The script selects the ST-LINK virtual COM port when exactly one is found. If
@@ -203,7 +204,7 @@ auto-detection cannot identify it, use the port shown by `--list-ports` or in
 Windows Device Manager under **Ports (COM & LPT)**:
 
 ```powershell
-py -3 tools/exo_serial_host.py --port COM3 --duration 8 --ping-interval 0.73
+py -3 tools/exo_serial_host.py --port COM3 --duration 8
 ```
 
 Substitute your actual COM number. Close other serial monitors before running
@@ -225,8 +226,8 @@ fallback remain available.
    ```bash
    docker run --rm --device=/dev/ttyACM0 \
      -v "$PWD":/workspace -w /workspace exo-firmware-dev \
-     python3 tools/exo_serial_host.py --duration 8 --ping-interval 0.73
+     python3 tools/exo_serial_host.py --duration 8
    ```
 
-3. Verify telemetry, logs, ping ACKs, and `crc_errors=0`. Repeat after every
+3. Check the boot messages and sensor output look right. Repeat after every
    hardware-facing change.

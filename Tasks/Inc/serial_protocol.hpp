@@ -1,31 +1,24 @@
 #pragma once
+#include <stdint.h>
+#include <string.h>
+extern "C" {
 
-#include <cstddef>
-#include <cstdint>
+#include "main.h"
+#include "stm32h7xx_hal_def.h"
 
-enum class SerialPacketType : uint8_t {
-    Telemetry = 0x01,
-    LogMessage = 0x04,
-    Ping = 0x05,
-    Ack = 0x06,
-};
+}
 
-constexpr uint16_t SERIAL_PROTOCOL_MAX_PAYLOAD = 256;
+// Plain-text debug output over the ST-LINK virtual COM port
+// (USART3 / BSP COM1, 115200 8N1). No framing, no queue: when a print call
+// returns, the bytes have been sent. Safe to call from any task, and before the
+// scheduler starts. Calls from an interrupt are ignored (they return HAL_BUSY).
 
-struct __attribute__((packed)) serial_telemetry_payload_t {
-    uint32_t timestamp_ms;
-    float accel_x_g;
-    float accel_y_g;
-    float accel_z_g;
-    float bno_quaternion_i;
-    float bno_quaternion_j;
-    float bno_quaternion_k;
-    float bno_quaternion_real;
-    float bno_accuracy_radians;
-    uint8_t bno_status;
-    uint8_t bno_valid;
-};
+#define SERIAL_PRINT(s) serial_print((const uint8_t*)(s), (uint16_t)strlen(s))
+#define SERIAL_PRINTLN(s) serial_print((const uint8_t*)(s "\r\n"), (uint16_t)strlen(s "\r\n"))
 
-bool serial_protocol_init();
-bool send_serial_packet(SerialPacketType type, const void* payload, uint16_t length);
-bool send_serial_log(const char* message, uint16_t length);
+// Call once at startup, before any task prints.
+void serial_init();
+
+HAL_StatusTypeDef serial_print(const uint8_t* str, uint16_t len);
+HAL_StatusTypeDef serial_printf(const char* format, ...) __attribute__((format(printf, 1, 2)));
+HAL_StatusTypeDef serial_print_byte(uint8_t byte);  // prints "0xAB\r\n"

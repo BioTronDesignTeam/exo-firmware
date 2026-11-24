@@ -46,18 +46,19 @@
    ```bash
    docker run --rm --device=/dev/ttyACM0 \
      -v "$PWD":/workspace -w /workspace exo-firmware-dev \
-     python3 tools/exo_serial_host.py --duration 8 --ping-interval 0.73
+     python3 tools/exo_serial_host.py --duration 8
    ```
 
    The stable port is `/dev/serial/by-id/*STLINK-V3*-if02`; the host user may
    lack `dialout` permission, so use the container form when necessary.
-4. Require telemetry, log frames, ping ACKs, and zero CRC errors before calling
-   a serial change verified. Diagnose and repeat after each hardware change.
+4. Require the expected boot and sensor lines in the raw serial output before
+   calling a serial change verified. Diagnose and repeat after each hardware change.
 
 ## Firmware constraints
 
 - Direct host serial uses the NUCLEO ST-LINK VCP on USART3 (PD8/PD9), not UART7.
-  The serial protocol owns its TX queue and uses CRC-16/CCITT-FALSE.
+  Output is plain text sent synchronously by `serial_print`/`serial_printf`
+  (`Tasks/Src/serial_protocol.cpp`), guarded by a mutex; there is no framing or RX handling.
 - The CPU runs at 480 MHz with I/D cache enabled. Keep AXI SRAM cacheable and
   D2 SRAM non-cacheable in `MPU_Config`; place future DMA buffers in the
   non-cacheable region or perform explicit cache maintenance.

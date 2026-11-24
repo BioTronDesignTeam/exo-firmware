@@ -2,7 +2,7 @@
 #include "msa311_registers.hpp"
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_nucleo.h"
-#include "uart.hpp"
+#include "serial_protocol.hpp"
 #include "cstring"
 
 MSA311::MSA311(I2C_HandleTypeDef* i2cHandle) : _i2c(i2cHandle) {
