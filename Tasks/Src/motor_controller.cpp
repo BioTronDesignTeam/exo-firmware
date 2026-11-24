@@ -64,7 +64,7 @@ void motorControllerMainLoop(void *arg)
 	  }
 
 	  
-	  serial_printf("Current: %f \r\n", odriveS1Handle->busVoltageCurrent.busCurrent);
+	  //serial_printf("Current: %f \r\n", odriveS1Handle->busVoltageCurrent.busCurrent);
 	  BSP_LED_Toggle(LED_GREEN);
 	  osDelay(50);
   }
@@ -75,6 +75,7 @@ void callEncoderUpdates(void* args)
 	{
 		odriveS1Handle->getEncoderEstimates();
 		serial_printf("Encoder estimates: position: %f and velocity %f \r\n", odriveS1Handle->encoderEstimates.positionEstimate, odriveS1Handle->encoderEstimates.velocityEstimate);
+		osDelay(300);
 	}
 }
 void motorControllerInitTask()

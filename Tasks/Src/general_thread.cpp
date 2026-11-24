@@ -7,7 +7,7 @@
 
 extern "C" void initTasks() {
 	init_imu_tasks();
-	//motorControllerInitTask();
+	motorControllerInitTask();
 }
 
 // One-shot init thread: sets up the drivers, then creates the worker tasks

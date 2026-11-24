@@ -147,7 +147,7 @@ void init_imu_tasks() {
     static const osThreadAttr_t updateBNO085Attributes = {
         .name = "UpdateBNO085",
         .stack_size = 2048,
-        .priority = (osPriority_t) osPriorityAboveNormal
+        .priority = (osPriority_t) osPriorityNormal
     };
     updateBNO085Handle = osThreadNew(update_bno085, NULL, &updateBNO085Attributes);
 }
