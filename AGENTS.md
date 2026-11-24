@@ -19,11 +19,15 @@
 
 ## Build and upload
 
-- `./upload` is the normal one-command build-and-flash workflow. It configures a
-  Debug Ninja build, verifies `build/exo-firmware.bin`, then flashes via
+- On Windows, `./upload.cmd` (or `./upload.ps1`) only flashes the existing
+  container-built `build/exo-firmware.bin`; it requires the Windows
+  STM32CubeProgrammer CLI and ST-LINK driver, with no host build tools.
+  Pass `-Build` to opt into a native Windows build in `build/windows/`.
+- `./upload` flashes the existing `build/exo-firmware.bin`. Pass `--build`
+  (or `-Build`) to configure and build with Debug Ninja before flashing via
   `STM32_Programmer_CLI -c port=SWD -w ... 0x08000000 -v -rst`.
-- The script uses native toolchains when available; otherwise it uses the
-  `exo-firmware-dev` image. Its container flash fallback requires USB access.
+- With `--build`, the script uses native toolchains when available; otherwise
+  it uses the `exo-firmware-dev` image. Its container flash fallback requires USB access.
 - For an explicit container flash while troubleshooting, expose the connected
   ST-LINK USB device:
 
