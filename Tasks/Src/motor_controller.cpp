@@ -1,13 +1,21 @@
 #include "motor_controller.hpp"
 #include "stm32h7xx_hal_fdcan.h"
 #include <stdio.h>
+#include "serial_protocol.hpp"
 
 extern FDCAN_HandleTypeDef hfdcan1;
 
 osThreadId_t motorControllerTaskHandle;
+osThreadId_t updateEncoderTaskHandle;
 
 static const osThreadAttr_t motorController_attributes = {
     .name = "MotorController",
+    .stack_size = 1024,
+    .priority = (osPriority_t) osPriorityNormal
+};
+
+static const osThreadAttr_t updateEncoderTask_attributes = {
+    .name = "UpdateEncoderTask",
     .stack_size = 1024,
     .priority = (osPriority_t) osPriorityNormal
 };
@@ -55,13 +63,22 @@ void motorControllerMainLoop(void *arg)
 		  BSP_LED_On(LED_YELLOW);
 	  }
 
-	  printf("Current: %f \r\n", odriveS1Handle->busVoltageCurrent.busCurrent);
+	  
+	  serial_printf("Current: %f \r\n", odriveS1Handle->busVoltageCurrent.busCurrent);
 	  BSP_LED_Toggle(LED_GREEN);
 	  osDelay(50);
   }
 }
-
+void callEncoderUpdates(void* args) 
+{
+	for (;;) 
+	{
+		odriveS1Handle->getEncoderEstimates();
+		serial_printf("Encoder estimates: position: %f and velocity %f \r\n", odriveS1Handle->encoderEstimates.positionEstimate, odriveS1Handle->encoderEstimates.velocityEstimate);
+	}
+}
 void motorControllerInitTask()
 {
     motorControllerTaskHandle = osThreadNew(motorControllerMainLoop, NULL, &motorController_attributes);
+    updateEncoderTaskHandle = osThreadNew(callEncoderUpdates, NULL, &updateEncoderTask_attributes);
 }
